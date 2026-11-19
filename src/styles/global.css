@@ -1,0 +1,113 @@
+/**
+ * Allo by Josh Puckett (https://allo.joshpuckett.me), self-hosted under the SIL Open Font License (public/fonts/OFL.txt).
+ * The "Friendly" variable font fixes roundness at 50; weight and optical size still vary. Obliques cover italics in posts.
+ */
+@font-face {
+	font-family: 'Allo';
+	src: url('/fonts/AlloVariableFriendly.woff2') format('woff2');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Allo';
+	src: url('/fonts/Allo-Oblique.woff2') format('woff2');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Allo';
+	src: url('/fonts/Allo-BoldOblique.woff2') format('woff2');
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+/**
+ * Borrows Jellify's colors (Jellify-Music/App src/configs/tamagui.config.ts): its primary purple, and a softened
+ * version of its dark theme's danger pink (#ff066f) as the accent. Light mode's pink is deeper so small text stays readable
+ */
+:root {
+	color-scheme: light dark;
+
+	--background: #ffffff;
+	--background-75: rgba(235, 221, 255, 0.75);
+	--background-50: rgba(235, 221, 255, 0.5);
+	--background-25: rgba(235, 221, 255, 0.25);
+	--border-color: #77748e;
+	--color: #0c0622;
+	--primary: #4b0fd6;
+	--accent: #cc3d7e;
+	--neutral: #77748e;
+	--translucent: rgba(255, 255, 255, 0.75);
+	--gradient: linear-gradient(100deg, var(--primary), var(--accent));
+
+	--font-family: 'Allo', system-ui, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: rgba(25, 24, 28, 1);
+		--background-75: rgba(25, 24, 28, 0.75);
+		--background-50: rgba(136, 123, 255, 0.12);
+		--background-25: rgba(136, 123, 255, 0.06);
+		--color: #ffffff;
+		--primary: #887bff;
+		--accent: #f76ea9;
+		--neutral: #a19eb5;
+		--translucent: rgba(0, 0, 0, 0.5);
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--background);
+	color: var(--color);
+	font-family: var(--font-family);
+	line-height: 1.5;
+}
+
+main {
+	flex: 1;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+::selection {
+	background-color: var(--accent);
+	color: #ffffff;
+}
+
+/* Purple-to-pink text, used for the name on the home page */
+.gradient-text {
+	background: var(--gradient);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
