@@ -1,8 +1,8 @@
 import type { Link } from '../types'
-import { mdiAccountCircleOutline, mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiMusicCircleOutline, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
+import { mdiAccountCircleOutline, mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiJellyfish, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
 
 export const SITE_NAME = 'Violet Caulfield'
-export const SITE_DESCRIPTION = 'Software engineer in Appleton, WI, and the creator of Jellify.'
+export const SITE_DESCRIPTION = 'Software engineer from Wisconsin, and the creator of Jellify.'
 
 // Forwarded to a personal inbox with Cloudflare Email Routing, so the real address stays private
 export const EMAIL = 'hello@violetcaulfield.com'
@@ -31,13 +31,13 @@ export const socialLinks: Link[] = [
 		label: 'GitHub',
 		icon: mdiGithub,
 		href: 'https://github.com/anultravioletaurora',
-		description: 'Code, open source, and everything Jellify',
+		description: 'The stuff I build',
 	},
 	{
 		label: 'LinkedIn',
 		icon: mdiLinkedin,
 		href: 'https://www.linkedin.com/in/violet-caulfield-0a422b132',
-		description: 'Work history and professional stuff',
+		description: 'The stuff I do',
 	},
 	{
 		label: 'Bluesky',
@@ -75,8 +75,8 @@ export const rssLink = {
 export const projects: Link[] = [
 	{
 		label: 'Jellify',
-		icon: mdiMusicCircleOutline,
+		icon: mdiJellyfish,
 		href: 'https://jellify.app',
-		description: 'A free and open source music player for Jellyfin, on iOS and Android.',
+		description: 'A free and open source music player for Jellyfin, available on iOS and Android.',
 	},
 ]
