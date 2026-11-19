@@ -1,0 +1,69 @@
+---
+import { emailLink, rssLink, SITE_NAME, socialLinks } from '@/config'
+import Icon from './Icon.astro'
+
+const links = [...socialLinks, emailLink, rssLink]
+---
+
+<footer>
+	<div class='inner'>
+		<p>© {new Date().getFullYear()} {SITE_NAME}</p>
+
+		<ul>
+			{
+				links.map((link) => (
+					<li>
+						<a href={link.href} rel='me' aria-label={link.label} title={link.label}>
+							<Icon path={link.icon} />
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</footer>
+
+<style>
+	footer {
+		border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+	}
+
+	.inner {
+		max-width: 64rem;
+		margin: 0 auto;
+		padding: 1.5rem 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	p {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--neutral);
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+
+	a {
+		display: inline-flex;
+		padding: 0.5rem;
+		border-radius: 7px;
+		color: var(--neutral);
+	}
+
+	a:hover,
+	a:focus-visible {
+		color: var(--accent);
+		background-color: var(--background-50);
+	}
+</style>

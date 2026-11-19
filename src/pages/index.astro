@@ -1,0 +1,294 @@
+---
+import { mdiArrowRight } from '@mdi/js'
+import Icon from '@/components/Icon.astro'
+import { formatPostDate, getPosts, getPostSnippet } from '@/config/blog'
+import { projects, SITE_DESCRIPTION, SITE_NAME, socialLinks } from '@/config'
+import Layout from '../layouts/Layout.astro'
+
+const recentPosts = (await getPosts()).slice(0, 3)
+---
+
+<Layout
+	schema={{
+		'@type': 'Person',
+		name: SITE_NAME,
+		url: Astro.site?.href,
+		description: SITE_DESCRIPTION,
+		sameAs: socialLinks.map((link) => link.href),
+	}}
+>
+	<main>
+		<section class='hero'>
+			<img class='avatar' src='/avatar.webp' alt={`Photo of ${SITE_NAME}`} width='160' height='160' />
+			<p class='eyebrow'>Hi, I'm</p>
+			<h1><span class='gradient-text'>Violet Caulfield</span></h1>
+			<p class='lede'>
+				I'm a software engineer from Wisconsin. I use JavaScript recreationally and post about my technological misadventures here.
+			</p>
+
+			<div class='actions'>
+				<a class='button' href='/blog'>
+					Read the blog
+					<Icon path={mdiArrowRight} />
+				</a>
+				<a class='button secondary' href='/contact'>Get in touch</a>
+			</div>
+
+			<ul class='social' aria-label='Elsewhere'>
+				{
+					socialLinks.map((link) => (
+						<li>
+							<a href={link.href} rel='me'>
+								<Icon path={link.icon} />
+								<span>{link.label}</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+
+		<section id='about' aria-labelledby='about-heading'>
+			<h2 id='about-heading'>About</h2>
+			<p>
+				I like software. Most of my free time goes into open source, especially Jellify.
+			</p>
+		</section>
+
+		<section aria-labelledby='projects-heading'>
+			<h2 id='projects-heading'>Projects</h2>
+			<ul class='cards'>
+				{
+					projects.map((project) => (
+						<li>
+							<a class='card' href={project.href}>
+								<Icon path={project.icon} />
+								<span>
+									<strong>{project.label}</strong>
+									<small>{project.description}</small>
+								</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</section>
+
+		{
+			recentPosts.length > 0 && (
+				<section aria-labelledby='posts-heading'>
+					<div class='section-header'>
+						<h2 id='posts-heading'>Recent posts</h2>
+						<a href='/blog'>All posts →</a>
+					</div>
+					<ol class='cards'>
+						{recentPosts.map((post) => (
+							<li>
+								<a class='card post' href={`/blog/${post.id}`}>
+									<time datetime={post.data.date.toISOString()}>{formatPostDate(post.data.date)}</time>
+									<strong>{post.data.title}</strong>
+									<small>{getPostSnippet(post)}</small>
+								</a>
+							</li>
+						))}
+					</ol>
+				</section>
+			)
+		}
+	</main>
+</Layout>
+
+<style>
+	main {
+		max-width: 48rem;
+		margin: 0 auto;
+		padding: 0 1rem 4rem;
+	}
+
+	/* Hero */
+
+	.hero {
+		padding: 4rem 0 3rem;
+	}
+
+	/* Gradient ring: the padding shows the background gradient around the photo */
+	.avatar {
+		display: block;
+		width: 10rem;
+		height: 10rem;
+		margin-bottom: 1.5rem;
+		padding: 4px;
+		border-radius: 50%;
+		object-fit: cover;
+		background: var(--gradient);
+	}
+
+	.eyebrow {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: var(--neutral);
+	}
+
+	h1 {
+		margin: 0.25rem 0 0;
+		font-size: clamp(2.75rem, 9vw, 4.5rem);
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1.05;
+	}
+
+	.lede {
+		margin: 1.25rem 0 0;
+		max-width: 36rem;
+		font-size: 1.25rem;
+	}
+
+	.lede a {
+		color: var(--primary);
+		font-weight: 600;
+	}
+
+	.actions {
+		margin-top: 2rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border: 2px solid var(--primary);
+		border-radius: 7px;
+		background-color: var(--primary);
+		color: var(--background);
+		font-weight: 700;
+		text-decoration: none;
+	}
+
+	.button:hover,
+	.button:focus-visible {
+		box-shadow: 0 8px 24px -8px var(--primary);
+	}
+
+	.button.secondary {
+		background-color: transparent;
+		color: var(--primary);
+	}
+
+	.social {
+		list-style: none;
+		margin: 2.5rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.25rem;
+	}
+
+	.social a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		color: var(--neutral);
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.social a:hover,
+	.social a:focus-visible {
+		color: var(--accent);
+	}
+
+	/* Sections */
+
+	section + section {
+		margin-top: 3.5rem;
+	}
+
+	#about {
+		scroll-margin-top: 5rem;
+	}
+
+	h2 {
+		margin: 0 0 1rem;
+		font-size: 1.5rem;
+		font-weight: 800;
+		letter-spacing: -0.01em;
+	}
+
+	#about p {
+		margin: 0;
+		font-size: 1.125rem;
+	}
+
+	.section-header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+
+	.section-header a {
+		color: var(--primary);
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.cards {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.card {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		color: var(--color);
+		text-decoration: none;
+		border: 2px solid var(--border-color);
+		border-radius: 14px;
+		padding: 1rem 1.25rem;
+	}
+
+	.card:hover,
+	.card:focus-visible {
+		border-color: var(--primary);
+	}
+
+	.card > :global(.icon) {
+		width: 2rem;
+		height: 2rem;
+		color: var(--primary);
+	}
+
+	.card span,
+	.post {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.post {
+		gap: 0.125rem;
+	}
+
+	.card strong {
+		font-size: 1.125rem;
+	}
+
+	.card small {
+		font-size: 0.9375rem;
+		color: var(--neutral);
+	}
+
+	time {
+		font-size: 0.875rem;
+		color: var(--accent);
+		font-weight: 600;
+	}
+</style>

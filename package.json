@@ -1,0 +1,36 @@
+{
+	"name": "violetcaulfield-website",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "bun run build && wrangler dev",
+		"lint": "eslint .",
+		"typecheck": "astro check",
+		"og-image": "bun scripts/og-image.mjs",
+		"deploy:version": "bun run build && wrangler versions upload",
+		"deploy": "bun run build && wrangler deploy"
+	},
+	"dependencies": {
+		"@astrojs/mdx": "8.1.3",
+		"@astrojs/rss": "4.0.19",
+		"@astrojs/sitemap": "3.7.5",
+		"@mdi/js": "7.4.47",
+		"astro": "7.4.7"
+	},
+	"devDependencies": {
+		"@astrojs/check": "0.9.12",
+		"@eslint/js": "9.39.5",
+		"@types/node": "26.6.6",
+		"eslint": "9.39.5",
+		"eslint-plugin-astro": "3.2.1",
+		"globals": "17.14.0",
+		"sharp": "0.35.5",
+		"typescript": "5.9.3",
+		"typescript-eslint": "8.72.1",
+		"wrangler": "4.158.0"
+	},
+	"packageManager": "bun@1.4.2"
+}

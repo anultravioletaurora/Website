@@ -1,0 +1,25 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "violetcaulfield-website",
+	"compatibility_date": "2026-10-01",
+	"observability": {
+		"enabled": true
+	},
+	/**
+	 * The domain's DNS is on Cloudflare, so the first deploy creates the DNS record and certificate
+	 * https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
+	 */
+	"routes": [{ "pattern": "violetcaulfield.com", "custom_domain": true }],
+	/**
+	 * The site is fully static, so the Worker only serves the build output
+	 * https://developers.cloudflare.com/workers/static-assets/
+	 */
+	"assets": {
+		"directory": "./dist",
+		"not_found_handling": "404-page"
+	}
+}

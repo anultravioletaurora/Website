@@ -1,0 +1,82 @@
+import type { Link } from '../types'
+import { mdiAccountCircleOutline, mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiJellyfish, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
+
+export const SITE_NAME = 'Violet Caulfield'
+export const SITE_DESCRIPTION = 'Software engineer from Wisconsin, and the creator of Jellify.'
+
+// Forwarded to a personal inbox with Cloudflare Email Routing, so the real address stays private
+export const EMAIL = 'hello@violetcaulfield.com'
+
+export const navLinks: Link[] = [
+	{
+		label: 'About',
+		icon: mdiAccountCircleOutline,
+		href: '/#about',
+	},
+	{
+		label: 'Blog',
+		icon: mdiPost,
+		href: '/blog',
+	},
+	{
+		label: 'Contact',
+		icon: mdiEmailOutline,
+		href: '/contact',
+	},
+]
+
+// Shown in the header, footer, and on the contact page. `rel='me'` on these lets Mastodon verify the site
+export const socialLinks: Link[] = [
+	{
+		label: 'GitHub',
+		icon: mdiGithub,
+		href: 'https://github.com/anultravioletaurora',
+		description: 'The stuff I build',
+	},
+	{
+		label: 'LinkedIn',
+		icon: mdiLinkedin,
+		href: 'https://www.linkedin.com/in/violet-caulfield-0a422b132',
+		description: 'The stuff I do',
+	},
+	{
+		label: 'Bluesky',
+		icon: mdiButterflyOutline,
+		href: 'https://bsky.app/profile/violexene.bsky.social',
+		description: '@violexene.bsky.social',
+	},
+	{
+		label: 'Mastodon',
+		icon: mdiMastodon,
+		href: 'https://mastodon.social/@violexene',
+		description: '@violexene@mastodon.social',
+	},
+	{
+		label: 'Reddit',
+		icon: mdiReddit,
+		href: 'https://www.reddit.com/user/anultravioletaurora',
+		description: 'u/anultravioletaurora',
+	},
+]
+
+export const emailLink = {
+	label: 'Email',
+	icon: mdiEmailOutline,
+	href: `mailto:${EMAIL}`,
+	description: EMAIL,
+} satisfies Link
+
+export const rssLink = {
+	label: 'RSS',
+	icon: mdiRss,
+	href: '/blog/rss.xml',
+} satisfies Link
+
+export const projects: Link[] = [
+	{
+		label: 'Jellify',
+		icon: mdiJellyfish,
+		href: 'https://jellify.app',
+		description: 'A free and open source music player for Jellyfin, available on iOS and Android.',
+	},
+]
