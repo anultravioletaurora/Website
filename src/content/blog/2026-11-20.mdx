@@ -52,7 +52,8 @@ My homelab uses [UniFi](https://ui.com) networking throughout. The
 [Dream Machine Pro](https://store.ui.com/us/en/products/udm-pro) handles routing and doubles as the
 console for managing everything remotely. The
 [Aggregation switch](https://store.ui.com/us/en/products/usw-aggregation) provides the 10Gbit
-backbone, and a 24-port switch handles everything that doesn't need the extra bandwidth.
+backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
+doesn't need the extra bandwidth.
 
 My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
@@ -71,9 +72,10 @@ datacenters:
   - Runs
     [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
     for [Jellify](https://jellify.app), the music player for Jellyfin that I work on
-    - [Xcode](https://developer.apple.com/xcode/), Maestro, simulators, and the
-      [Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh
-      Mac goes from unboxed to building and testing apps with a single playbook run.
+    - [Xcode](https://developer.apple.com/xcode/), [Maestro](https://maestro.mobile.dev),
+      simulators, and the [Android SDK](https://developer.android.com/studio) are all provisioned by
+      Ansible, so a fresh Mac goes from unboxed to building and testing apps with a single playbook
+      run.
   - Also home to a few x64 Linux nodes for the jobs that don't need a Mac
 
 ### The Storage
@@ -112,7 +114,8 @@ does limit the fun, but as you might imagine there is still plenty of fun to be 
 
 The software base is, of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
 Silicon thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org),
-but it doesn't support M4 chips - at least as of this writing.
+but it [doesn't support M4 chips](https://asahilinux.org/docs/platform/feature-support/m4/) - at
+least as of this writing.
 
 macOS is very much designed for the desktop, and even daily driving a MacBook Pro didn't prepare me
 for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
@@ -202,8 +205,9 @@ jobs lives.
 Setting up six Macs by hand was never going to happen. I'm far too lazy for that.
 
 [Ansible](https://www.ansible.com) was the obvious choice for managing this six-pack. It runs over
-SSH and only needs Python on the target, which the Xcode Command Line Tools provide. There's no
-agent to install and nothing else to bootstrap beyond flipping on
+SSH and only needs Python on the target, which the
+[Xcode Command Line Tools](https://developer.apple.com/documentation/xcode/installing-the-command-line-tools)
+provide. There's no agent to install and nothing else to bootstrap beyond flipping on
 [Remote Login](https://support.apple.com/guide/mac-help/allow-a-remote-computer-to-access-your-mac-mchlp1066/mac).
 
 Since adopting Ansible as my management tool of choice, I've built up quite a collection of
@@ -231,9 +235,10 @@ it deploys to.
 ### Apple + IBM sounds familiar...
 
 If you're keeping track: Nomad, Consul, and Terraform come from
-[HashiCorp](https://en.wikipedia.org/wiki/HashiCorp), which IBM acquired in 2025, and Ansible comes
-from [Red Hat](https://en.wikipedia.org/wiki/Red_Hat), which IBM acquired back in 2019. So my
-homelab is _technically_ Apple hardware running IBM software.
+[HashiCorp](https://en.wikipedia.org/wiki/HashiCorp), which IBM
+[acquired in 2025](https://newsroom.ibm.com/2025-02-27-ibm-completes-acquisition-of-hashicorp,-creates-comprehensive,-end-to-end-hybrid-cloud-platform),
+and Ansible comes from [Red Hat](https://en.wikipedia.org/wiki/Red_Hat), which IBM acquired back
+in 2019. So my homelab is _technically_ Apple hardware running IBM software.
 
 Just missing Motorola in the mix and it's like [AIM](https://en.wikipedia.org/wiki/AIM_alliance)
 never dissolved.
@@ -263,7 +268,8 @@ The jobs I run on the rack can be broken up into tiers, based on how critical th
       - NFS share scans
       - S3 backups to [Backblaze](https://www.backblaze.com/cloud-storage)
   - Jellyfin
-    - A native `.app` that uses Apple's VideoToolbox for
+    - A native `.app` that uses Apple's
+      [VideoToolbox](https://developer.apple.com/documentation/videotoolbox) for
       [hardware accelerated transcoding](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/)
     - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) acts as an
       [HDHomeRun](https://www.silicondust.com) tuner for Live TV
@@ -323,7 +329,8 @@ against music I own.
 
 ## Jellify Actions
 
-The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad `system` job puts one
+The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad
+[`system` job](https://developer.hashicorp.com/nomad/docs/concepts/scheduling/schedulers) puts one
 ephemeral runner on every node tagged as a runner. Each runner takes exactly one job, wipes its work
 folder, and registers a fresh replacement, so no build ever sees the last one's leftovers.
 
@@ -351,7 +358,8 @@ one).
 The tests run as `raw_exec` straight on macOS, using the Xcode, simulators, and Android SDK that
 Ansible provisions, so there's no VM between the emulator and the hardware. When a run finishes,
 screenshots, logs, and the UI hierarchy get uploaded as artifacts, and the result gets posted to
-Discord. If a PR breaks the player or the queue, I find out before it ships, not from a bug report.
+[Discord](https://discord.gg/yf8fBatktn). If a PR breaks the player or the queue, I find out before
+it ships, not from a bug report.
 
 ### Release Notes
 
@@ -359,7 +367,9 @@ The Jellify datacenter is mostly walled off from Cosmonautical. There's one exce
 release notes.
 
 Every Jellify release, both store builds and over-the-air updates, gets its notes written by an LLM
-running on the cluster. The pipeline is a composite GitHub Action with a few steps:
+running on the cluster. The pipeline is a
+[composite GitHub Action](https://github.com/Jellify-Music/App/tree/main/.github/actions/generate-release-notes)
+with a few steps:
 
 1. **Work out the tag.** A store release counts from the previous store release, so people updating
    from the App Store or Play Store see everything since their last update, including anything that
@@ -480,8 +490,9 @@ Some people showed me this was possible before I ever racked a Mac. Thank you to
 
 - [Jeff Geerling](https://www.jeffgeerling.com), whose
   [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
-  Homebrew and Mac App Store installs in my playbooks, and whose Mac adventures gave me the
-  confidence to build a cluster of my own
+  Homebrew and Mac App Store installs in my playbooks, and whose
+  [Mac adventures](https://www.jeffgeerling.com/tags/mac-mini) gave me the confidence to build a
+  cluster of my own
 
 ### The Sponsors
 
