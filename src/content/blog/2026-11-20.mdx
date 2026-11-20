@@ -37,7 +37,7 @@ Nearly two years in, I've gotten into a rhythm working with them and I have plen
 ## Bearing Fruition
 
 Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
-[PowerMac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
+[Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
 supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder how
 a rack full of Macs working together as an actual cluster would be classified.
 
@@ -46,7 +46,7 @@ Mini sips power at idle, runs nearly silent, and still has a Media Engine for vi
 speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone who's
 familiar with Apple products, that's a pretty compelling package to put in a rack.
 
-#### The Network
+### The Network
 
 My homelab uses [UniFi](https://ui.com) networking throughout. The
 [Dream Machine Pro](https://store.ui.com/us/en/products/udm-pro) handles routing and doubles as the
@@ -58,7 +58,7 @@ My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
 company, so I found it fitting to bring hardware from those two companies together.
 
-#### The Compute
+### The Compute
 
 Six Mac Minis live in Sonnet's [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
 enclosures, three to a shelf, each labeled with its hostname. The Minis are split into two Nomad
@@ -74,28 +74,31 @@ datacenters:
     - [Xcode](https://developer.apple.com/xcode/), Maestro, simulators, and the
       [Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh
       Mac goes from unboxed to building and testing apps with a single playbook run.
+  - Also home to a few x64 Linux nodes for the jobs that don't need a Mac
 
-#### The Storage
+### The Storage
 
-Bulk, SSD storage lives on a [UNAS Pro 8](https://store.ui.com/us/en/products/unas-pro-8), which
+Bulk SSD storage lives on a [UNAS Pro 8](https://store.ui.com/us/en/products/unas-pro-8), which
 serves [NFS](https://en.wikipedia.org/wiki/Network_File_System) shares (music, books, ROMs and so
-on) to the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly via
-Thunderbolt to Cassiopeia.
+on) to the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly to
+Cassiopeia.
 
 ### Tech Specs
 
 - Networking
-  - Unifi Dream Machine Pro
-    - Router and Unifi Cloud Key for remote access management
-  - Unifi Switch Aggregation
+  - UniFi Dream Machine Pro
+    - Router and UniFi OS console for remote management
+  - UniFi Switch Aggregation
     - 10Gbit networking backbone
-  - Unifi USG-24
+  - UniFi USW-24
     - Standard networking backbone
 - Compute
   - 3 M4 Pro Mac Minis (24GB RAM each)
     - The "Cosmonautical" datacenter
   - 3 M4 Mac Minis (16GB RAM each)
     - The "[Jellify](https://jellify.app)" datacenter
+  - x64 Linux nodes
+    - Also in the "Jellify" datacenter, for runners that don't need a Mac
 - Storage
   - UNAS Pro 8
   - DIY Thunderbolt DAS
@@ -105,7 +108,7 @@ Thunderbolt to Cassiopeia.
 Hardware is nothing without the software to leverage it. Running bleeding edge, proprietary hardware
 does limit the fun, but as you might imagine there is still plenty of fun to be had.
 
-#### The OS: macOS
+### The OS: macOS
 
 The software base is, of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
 Silicon thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org),
@@ -129,7 +132,7 @@ This hasn't been a dealbreaker for me, but it means I'm using remote desktop /
 [Guacamole](https://guacamole.apache.org) after upgrades to ensure that everything is connecting
 properly.
 
-#### The Orchestrator: Nomad
+### The Orchestrator: Nomad
 
 With multiple nodes running, I wanted to have an orchestrator to keep everything in check. Before
 the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io) cluster, so
@@ -152,7 +155,7 @@ Jellify datacenter now, and if I ever want a Windows box, it can join too.
 
 #### The Container Runtime: Apple Container
 
-Not everything I run ships as a native macOS app, though. A lot of apps I deploy ship only an OCI
+Not everything I run ships as a native macOS app, though. A lot of apps I deploy only come as an OCI
 image, and I need a container runtime to bring them online. The obvious choice is Docker; however,
 on macOS that means running a full install of
 [Docker Desktop](https://www.docker.com/products/docker-desktop/). [Podman](https://podman.io) is
@@ -168,7 +171,7 @@ memory whether anything is running or not, and when it gets wedged, every contai
 goes down with it. It's also one more thing for Nomad to know nothing about, since all it sees is a
 CLI talking to a daemon that's talking to a VM.
 
-Apple's `container` flips that around. There's no shared VM to babysit, each container _is_ its own
+Apple's `container` flips that around. There's no shared VM to babysit; each container _is_ its own
 VM, booting in about a second and sized to what the job asks for. When a Nomad allocation stops, its
 VM goes away and the memory goes back to macOS, ready for another job to use. Every container also
 gets its own IP address, so there's no port-forwarding dance between the host and a VM, and one
@@ -191,20 +194,19 @@ by name over DNS (`<service>.service.consul`) instead of hard-coded IPs.
 It pulls double duty, too: Consul is the distributed config store that
 [Patroni](https://github.com/patroni/patroni) uses to handle Postgres failover, and it's where the
 [Terraform state](https://developer.hashicorp.com/terraform/language/backend/consul) for my Nomad
-jobs lives. The three Macs in my `cosmonautical` datacenter all run as both Nomad and Consul
-servers.
+jobs lives.
 
-#### The Management: Ansible
+### The Management: Ansible
 
 Setting up six Macs by hand was never going to happen. I'm far too lazy for that.
 
-[Ansible](https://www.ansible.com) was the obvious choice for managing this six pack. Running over
-SSH and leveraging Python on the target, Ansible needs no additional dependencies outside of what is
-preinstalled on every target Mac. There's nothing to bootstrap beyond flipping on
+[Ansible](https://www.ansible.com) was the obvious choice for managing this six-pack. It runs over
+SSH and only needs Python on the target, which the Xcode Command Line Tools provide. There's no
+agent to install and nothing else to bootstrap beyond flipping on
 [Remote Login](https://support.apple.com/guide/mac-help/allow-a-remote-computer-to-access-your-mac-mchlp1066/mac).
 
 Since adopting Ansible as my management tool of choice, I've built up quite a collection of
-collections. My playbooks have grown into a nice lil family and are
+collections. They've grown into a nice lil family and are
 [all published on Ansible Galaxy](https://galaxy.ansible.com/ui/namespaces/cosmonautical/):
 
 - [`cosmonautical.macible`](https://github.com/Cosmonautical-Cloud/Macible): generic macOS roles for
@@ -225,7 +227,7 @@ The [Nomad jobs](https://github.com/Jellify-Music/Nomad-Jobs) themselves are def
 by [Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very cluster
 it deploys to.
 
-#### Apple + IBM sounds familiar...
+### Apple + IBM sounds familiar...
 
 If you're keeping track: Nomad, Consul, and Terraform come from
 [HashiCorp](https://en.wikipedia.org/wiki/HashiCorp), which IBM acquired in 2025, and Ansible comes
@@ -235,11 +237,9 @@ homelab is _technically_ Apple hardware running IBM software.
 Just missing Motorola in the mix and it's like [AIM](https://en.wikipedia.org/wiki/AIM_alliance)
 never dissolved.
 
-{/* Draft notes pulled from the Nomadintosh / Nomadable / Nomad-Jobs / nomad-driver-container history. Revise or cut freely. */}
+## Roll Out the Barrels
 
-## Roll out the barrels
-
-The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on how critical they are.
+The jobs I run on the rack can be broken up into tiers, based on how critical they are.
 
 - Tier 1 (Core Infrastructure):
   - [Postgres](https://www.postgresql.org) (Patroni, using Consul as its DCS)
@@ -262,7 +262,7 @@ The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on ho
       - NFS share scans
       - S3 backups to [Backblaze](https://www.backblaze.com/cloud-storage)
   - Jellyfin
-    - A native `.app` that uses Apple MediaToolbox for
+    - A native `.app` that uses Apple's VideoToolbox for
       [hardware accelerated transcoding](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/)
     - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) acts as an
       [HDHomeRun](https://www.silicondust.com) tuner for Live TV
@@ -276,7 +276,7 @@ The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on ho
   - GitHub Actions runners for Jellify (more on those below)
 
 Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm,
-AudioMuse), others are Linux containers through Apple `container` via my
+AudioMuse), while others are Linux containers through Apple `container` via my
 [`nomad-driver-container`](https://github.com/anultravioletaurora/nomad-driver-container) plugin.
 
 ## Shut Up and Drive
@@ -326,7 +326,8 @@ The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad `system
 ephemeral runner on every node tagged as a runner. Each runner takes exactly one job, wipes its work
 folder, and registers a fresh replacement, so no build ever sees the last one's leftovers.
 
-Any action that doesn't need a Mac lands on x64 Linux runners in the same job. These include:
+Any action that doesn't need a Mac lands on x64 Linux runners from the same Nomad job. These
+include:
 
 - [Jest](https://jestjs.io) unit tests on every branch push
 - JS bundle and Android APK builds on PRs
@@ -380,7 +381,7 @@ running on the cluster. The pipeline is a composite GitHub Action with a few ste
    issues, merged PRs, and a thank-you to everyone who contributed.
 
 So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
-writing a word, and the words it does write are generated on a Mac Mini in my rack.
+writing a word, all powered by a Mac Mini in my rack.
 
 ## Standard Operating Procedures
 
@@ -394,8 +395,8 @@ Homebrew upgrades get deployed by rerunning the
 Nomad, Consul, and the rest of the Homebrew packages in my inventory to their latest versions, so
 patching a host is as simple as running the playbook again.
 
-Upgrading is the easy part. As I mentioned earlier, Homebrew swaps the binary, not the process, so
-the playbook also handles the restarts:
+Upgrading is the easy part. Homebrew swaps the binary on disk, but anything already running keeps
+using the old one, so the playbook also handles the restarts:
 
 - **Nomad and Consul** restart one host at a time, and the playbook waits for the agent and the
   cluster to report healthy before moving on to the next one. A run that upgrades every server never
@@ -433,9 +434,9 @@ click through whatever prompt it's decided to throw at you this time.
 
 ## A Few Thank Yous
 
-There are a lot of people who have made this setup possible who deserve a salute.
+A lot of people made this setup possible, and they deserve a salute.
 
-#### The Maintainers
+### The Maintainers
 
 Every piece of this setup stands on someone else's work, and most of it is maintained in the open by
 people who owe me nothing. Thank you to the maintainers of:
@@ -448,12 +449,8 @@ people who owe me nothing. Thank you to the maintainers of:
 - Apple's [`container`](https://github.com/apple/container), which runs every Linux workload I have
 - [Maestro](https://maestro.mobile.dev), for making mobile UI testing on real simulators and
   emulators approachable
-- [Jeff Geerling](https://www.jeffgeerling.com), whose
-  [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
-  Homebrew and Mac App Store installs in my playbooks, and whose adventures in macOS gave me the
-  confidence to build a Mac cluster in the first place
 
-#### The Builders
+### The Builders
 
 The apps are the reason the cluster exists at all. Thank you to the open source contributors behind
 [Jellyfin](https://jellyfin.org), [Nextcloud](https://nextcloud.com),
@@ -463,7 +460,16 @@ The apps are the reason the cluster exists at all. Thank you to the open source 
 [Guacamole](https://guacamole.apache.org), and [Seerr](https://github.com/seerr-team/seerr). Your
 work powers my modern digital life.
 
-#### The Sponsors
+### The Visionaries
+
+Some people showed me this was possible before I ever racked a Mac. Thank you to:
+
+- [Jeff Geerling](https://www.jeffgeerling.com), whose
+  [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
+  Homebrew and Mac App Store installs in my playbooks, and whose adventures with the Mac gave me the
+  confidence to build a Mac cluster in the first place
+
+### The Sponsors
 
 Finally, thank you to everyone who sponsors me on GitHub and Patreon. Your support is what lets me
 spend time building systems like this one and working on Jellify.
