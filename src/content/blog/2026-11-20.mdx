@@ -74,7 +74,7 @@ Bulk, SSD storage lives on a UNAS Pro 8, which serves NFS shares (music, books, 
 the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly to
 Cassiopeia.
 
-### Specs
+### Tech Specs
 
 - Networking
   - Unifi Dream Machine Pro
@@ -95,36 +95,30 @@ Cassiopeia.
 ## Software Sells Hardware
 
 Hardware is nothing without the software to leverage it. Running bleeding edge, proprietary hardware
-does limit the fun, but there is still plenty of fun to be had.
+does limit the fun, but as you might imagine there is still plenty of fun to be had.
 
 #### The OS: macOS
 
 The software base is of course, macOS. Linux _does_ support Apple Silicon thanks to the people way
-smarter than me working on [Asahi Linux](https://asahilinux.org), but it doesn't support M4 chips at
-least as of the time of this writing.
+smarter than me working on [Asahi Linux](https://asahilinux.org), but it doesn't support M4 chips -
+at least as of the time of this writing.
 
 macOS is very much designed for desktop, and there are a variety of challenges this has given me
 despite daily driving a MacBook Pro. Most of them come down to macOS assuming there's a person
 sitting in front of the screen, ready to click "Allow".
 
 **[Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
-is the final boss.** Since macOS Sequoia, apps need permission to talk to devices on the local
-network, and that permission is granted through a GUI prompt. That's great on a laptop, and not
-great on a headless server. It's tied to the binary's code signature, so every time
-[Homebrew](https://brew.sh) upgrades a service like `consul` or `php`, macOS treats the new binary
-as a stranger and wants a fresh click. It can't be scripted either, since the permissions database
-is protected by [System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty
+is the Achilles' heel.** Since macOS Sequoia, apps need permission to talk to devices on the local
+network, and that permission is granted through a GUI prompt. That's great on a laptop, but not on a
+headless server. It's tied to the binary's code signature, so every time [Homebrew](https://brew.sh)
+upgrades a service like `consul` or `php`, macOS treats the new binary as a stranger and wants a
+fresh click. As far as I can tell this can't be scripted either, since the permissions database is
+protected by [System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty
 frustrating: the daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just
 fine.
 
-**Upgrades swap the binary, not the process.** On Linux, a package upgrade typically comes with a
-service restart. Homebrew just replaces the file on disk, so the old version keeps happily running
-until something restarts it. I had Consul 2.0.3 running well after 2.0.4 was installed, and
-long-running processes launched from a binary that has since been deleted can lose their Local
-Network access entirely.
-
-None of this has been a dealbreaker to me, but it means I'm using remote desktop /
-[Guacamole](https://guacamole.apache.org) ufter upgrades to ensure that everything is connecting
+To me, this hasn't been a dealbreaker to me, but it means I'm using remote desktop /
+[Guacamole](https://guacamole.apache.org) after upgrades to ensure that everything is connecting
 properly.
 
 #### The Orchestrator: Nomad
@@ -151,9 +145,10 @@ ever want a Windows box that can join too.
 
 #### The Container Runtime: Apple Container
 
-Not everything I run ships as a macOS app, though. A lot of apps I deploy ship only as an OCI image,
-and for that we need a way to run the containers. The obvious choice is Docker, however on macOS
-that means running a full install of
+Not everything I run ships as a native macOS app, though.
+
+A lot of apps I deploy ship only as an OCI image, and for that we need a way to run the containers.
+The obvious choice is Docker, however on macOS that means running a full install of
 [Docker Desktop](https://www.docker.com/products/docker-desktop/). [Podman](https://podman.io) is
 also an option, and has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman).
 
@@ -166,8 +161,10 @@ to try it out for yourself, you can grab the latest release from
 
 #### The Service Mesh: Consul
 
-Nomad pairs with [Consul](https://www.consul.io) for service discovery, health checks, and key/value
-storage. Every service registers itself with Consul, so jobs find each other by name over DNS
+Naturally, Nomad pairs nicely with [Consul](https://www.consul.io) for service discovery, health
+checks, and key/value storage.
+
+Every service registers itself with Consul, so jobs find each other by name over DNS
 (`<service>.service.consul`) instead of hard-coded IPs. It pulls double duty, too: Consul is the
 distributed config store that [Patroni](https://github.com/patroni/patroni) uses to handle Postgres
 failover, and it's where the Terraform state for my Nomad jobs lives. The three Macs in my
@@ -175,19 +172,23 @@ failover, and it's where the Terraform state for my Nomad jobs lives. The three 
 
 #### The Management: Ansible
 
-Setting up six Macs by hand was never going to happen, at least not more than once.
-[Ansible](https://www.ansible.com) works over SSH leveraging Python on the target, both of which
-every Mac has so there's nothing to bootstrap beyond flipping on Remote Login.
+Setting up six Macs by hand was never going to happen, I'm far to lazy for that.
 
-My playbooks have grown into a nice lil family,
+[Ansible](https://www.ansible.com) ended up being a perfect fit for managing this six pack. Running
+over SSH and leveraging Python on the target, Ansible needs no additional dependencies outside of
+what is preinstalled on every target Mac. There's nothing to bootstrap beyond flipping on Remote
+Login.
+
+Since adopting Ansible as my management tool of choice, I've built up quite a collection of
+collections. My playbooks have grown into a nice lil family and are
 [all published on Ansible Galaxy](https://galaxy.ansible.com/ui/namespaces/cosmonautical/):
 
 - [`cosmonautical.macible`](https://github.com/Cosmonautical-Cloud/Macible): generic macOS roles for
   any Mac, server or workstation. Software Update, Homebrew, Xcode, the Android SDK, NFS mounts,
   container runtimes, etc.
 - [`cosmonautical.nomadintosh`](https://github.com/Cosmonautical-Cloud/Nomadintosh): Nomad and
-  Consul on macOS, built on top of Macible. Homebrew for the binaries, LaunchAgents to keep them
-  running.
+  Consul on macOS, built on top of Macible. Uses Homebrew for the binaries, and bootstraps
+  LaunchAgents to keep them running.
 - [`cosmonautical.nomaduntu`](https://github.com/Cosmonautical-Cloud/Nomaduntu): the Ubuntu
   counterpart, using HashiCorp's apt repo and systemd.
 - [`cosmonautical.nomadable`](https://github.com/Cosmonautical-Cloud/Nomadable): the parent
@@ -195,13 +196,13 @@ My playbooks have grown into a nice lil family,
   Ubuntu cluster deploys in a single run.
 
 The [Nomad jobs](https://github.com/Jellify-Music/Nomad-Jobs) themselves are defined in
-[Terraform](https://www.terraform.io), and both the Ansible and Terraform get run by
-[Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very cluster it
-deploys to.
+[Terraform](https://www.terraform.io), and both the Ansible playbooks and Terraform solutions get
+run by [Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very
+cluster it deploys to.
 
 #### Apple + IBM sounds familar...
 
-If you're keeping score: Nomad, Consul, and Terraform come from HashiCorp, which IBM acquired in
+If you're keeping track: Nomad, Consul, and Terraform come from HashiCorp, which IBM acquired in
 2025, and Ansible comes from Red Hat, which IBM acquired back in 2019. So my homelab is
 _technically_ Apple hardware running IBM software.
 
@@ -270,7 +271,15 @@ Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nex
 AudioMuse), others are Linux containers through Apple `container` via my
 [`nomad-driver-container`](https://github.com/anultravioletaurora/nomad-driver-container) plugin.
 
-## Day to Day Operations
+## Shut Up and Drive
+
+Cosmonautical primarily sees usage by myself, friends, and family - Jellyfin being the most used
+application, RomM being an honorable mention
+
+Jellify leverages the AI capabilities in Cosmonautical for release note generation, but is otherwise
+running GitHub Actions in isolation from the Cosmo cluster
+
+## Standardized Operationing Prodecures
 
 With vulnerabilities landing faster than ever, I've had plenty of practice running through patching
 procedures. Patches go in one of two ways: Homebrew via Ansible, or Nomad jobs via Semaphore.
