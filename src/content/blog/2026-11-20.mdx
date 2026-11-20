@@ -225,14 +225,3 @@ the freshly signed binaries.
 Version bumps for Nomad jobs come from [Renovate](https://github.com/renovatebot/renovate), which opens a PR against my Terraform whenever a new
 release of an app ships. Once I merge it to `main`, Semaphore runs `terraform plan` and then holds the change for my approval before
 `terraform apply` rolls it out to the cluster. GitOps FTW.
-
-
-## Notes: takeaways / angles for the post
-
-- macOS as a server OS works, but the friction comes from desktop-first assumptions: TCC prompts, `gui/<uid>` launchd domains, Homebrew upgrading binaries under live processes.
-- Native Nomad on Apple Silicon means hardware acceleration for free (Jellyfin transcoding, Ollama, CoreML) with no hypervisor tax.
-- Apple `container` plus a Nomad driver makes Linux workloads first-class next to native ones.
-- Everything is codified: Ansible for hosts, Terraform for jobs, Semaphore as the pipeline, Renovate for version bumps.
-- The cluster also does real work for Jellify (CI runners), not just a media server.
-- Possible tie-in to the intro: the PowerMac G4 "supercomputer" ad, then and now: a rack of aluminum Macs as an actual cluster.
-- Possible sections: "Why not Kubernetes", "The Ansible family tree", "Writing a Nomad driver for Apple container", "Things macOS does that Linux doesn't", "What I'd do differently".
