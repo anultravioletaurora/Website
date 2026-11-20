@@ -160,12 +160,12 @@ Jellify datacenter now, and if I ever want a Windows box, it can join too.
 
 Not everything I run ships as a native macOS app, though. A lot of apps I deploy only come as an OCI
 image, and I need a container runtime to bring them online. The obvious choice is Docker; however,
-on macOS that means running a full install of
-[Docker Desktop](https://www.docker.com/products/docker-desktop/). [Podman](https://podman.io) is
-also an option, and even has a
-[task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I opted instead to write
-my own task driver for Apple's [`container`](https://github.com/apple/container) tool, which runs
-each Linux container in its own lightweight VM on the
+on macOS that usually means running a full install of
+[Docker Desktop](https://www.docker.com/products/docker-desktop/), or something like
+[Colima](https://github.com/abiosoft/colima). [Podman](https://podman.io) is also an option, and
+even has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I opted
+instead to write my own task driver for Apple's [`container`](https://github.com/apple/container)
+tool, which runs each Linux container in its own lightweight VM on the
 [Virtualization framework](https://developer.apple.com/documentation/virtualization).
 
 Both Docker and Podman work the same way on the Mac: they boot one big Linux VM in the background
@@ -436,11 +436,12 @@ idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw
 it. Those numbers come from remembering what my UPS showed, not careful measurement, but they're in
 the right ballpark.
 
-The "Mac Rack Mini Pro" has twice as many nodes and still comes in well under that. It idles in the
-mid 100Ws, and under load it settles in the mid 200Ws, about where the old cluster used to _idle_.
+The new rack (affectionately referred to ass "Mac Rack Mini Pro") has twice as many nodes and still
+comes in well under that. It idles in the mid 100Ws, and under load it settles in the mid 200Ws,
+about where the old cluster used to _idle_.
 
-That's added up over time. Since making the switch, my electric bill has dropped by around 75-125kWh
-a month. Twice the nodes, less power.
+That's added up over time. Since making the switch, my power usage has dropped by around 75-125kWh a
+month. Twice the nodes, less power.
 
 ## Should You Eat the Forbidden Fruit?
 
