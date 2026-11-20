@@ -273,11 +273,73 @@ AudioMuse), others are Linux containers through Apple `container` via my
 
 ## Shut Up and Drive
 
-Cosmonautical primarily sees usage by myself, friends, and family - Jellyfin being the most used
-application, RomM being an honorable mention
+All of this would be a very expensive space heater if nobody used it. Cosmonautical is mostly used
+by me, my friends, and my family, and Jellyfin sees the most use by a mile.
 
-Jellify leverages the AI capabilities in Cosmonautical for release note generation, but is otherwise
-running GitHub Actions in isolation from the Cosmo cluster
+#### Jellyfin and Co.
+
+Jellyfin is where I watch and listen to damn near everything. Movies, shows, and Live TV through
+Dispatcharr all come from the cluster, and when someone wants something that isn't in the library
+yet, they ask for it in Seerr instead of texting me. Since Jellyfin runs natively on macOS,
+transcoding goes through the Media Engine, so a friend streaming on hotel Wi-Fi doesn't bring the
+Mac to its knees.
+
+Music is obviously the part I care about the most. It's how Jellify gets dogfooded: I stream
+self-hosted music through Jellify every day across various setups, so I'm constantly on the hunt for
+bugs or imagining new features.
+
+#### Sonic Analysis with AudioMuse-AI
+
+Streaming services have one big advantage over a self-hosted library, and that's recommendations.
+Spotify knows that a song is upbeat, or mellow, or sounds a lot like another song. A folder of FLACs
+on a NAS doesn't know any of that.
+
+[AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI) closes that gap. It analyzes the audio of
+every track in the Jellyfin libraries, building up a sonic profile of the whole collection. It runs
+as a native `.app` on macOS, so the analysis happens on Apple Silicon with CoreML, and the results
+live in Postgres and Redis alongside everything else.
+
+AudioMuse-AI's [Jellyfin plugin](https://github.com/NeptuneHub/audiomuse-ai-plugin) exposes all of
+it through Jellyfin itself. The plugin swaps Jellyfin's Instant Mix for one built on sonic
+similarity, so any Jellyfin client gets smarter mixes without changing a thing. It also adds
+endpoints for similar tracks and artists, plain-language search ("upbeat summer songs"), and
+chat-generated playlists.
+
+To make those easy to use in Jellify, I wrote a typed client for the plugin,
+[`@jellify-music/audiomuse-ai-jellyfin-sdk`](https://github.com/Jellify-Music/AudioMuse-AI-Jellyfin-SDK),
+built on top of the [Jellyfin TypeScript SDK](https://github.com/jellyfin/jellyfin-sdk-typescript).
+Jellify checks if the plugin is installed on your server, and if it is, you can describe a playlist
+and have AudioMuse-AI build it from your own library. All of that analysis runs on hardware I own,
+against music I own.
+
+#### Jellify Release Notes
+
+The Jellify datacenter is mostly walled off from Cosmonautical. The runners only run GitHub Actions
+and don't touch the rest of the cluster. There's one exception, though: release notes.
+
+Every Jellify release, both store builds and over-the-air updates, gets its notes written by an LLM
+running on the cluster. The pipeline is a composite GitHub Action with a few steps:
+
+1. **Work out the tag.** A store release counts from the previous store release, so people updating
+   from the App Store or Play Store see everything since their last update, including anything that
+   already shipped over the air. An OTA update counts from the previous tag of either kind, so it
+   only covers what's new.
+2. **Collect the changes.** A script walks every commit between the two tags and asks the GitHub API
+   which merged PR each one belongs to. Then it uses GraphQL (the only API that tells you which
+   issues a PR closes) to pull in the closed issues, and it collects every contributor who isn't a
+   bot. Version bumps and merge commits are skipped, since they don't say anything about the
+   release.
+3. **Write the narrative.** The PR titles, closed issues, and any commits that didn't come from a PR
+   go to `gemma4:12b`, running on Ollama and served through the OpenAI-compatible API in Open WebUI.
+   The system prompt feeds in the commit messages and asks for a short summary and three high
+   profile bullet points. For OTA updates, it also mentions that the update downloads the next time
+   the app is opened.
+4. **Ship it.** The narrative goes to TestFlight with the iOS build, and to Discord through a
+   webhook that pings the release role. The GitHub release gets the narrative too, followed by the
+   list of closed issues, merged PRs, and a thank-you to everyone who contributed.
+
+So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
+writing a word, and the words it does write are generated on a Mac Mini in my rack.
 
 ## Standardized Operationing Prodecures
 
@@ -298,8 +360,8 @@ the playbook also handles the restarts:
   takes more than one of them out of quorum.
 - **Nomad jobs** running directly on macOS (`raw_exec`) get restarted afterwards, again one at a
   time. They'd otherwise keep running the old binaries, under an executor started by the old `nomad`
-  binary that Homebrew has since deleted, which is how my Postgres replicas once ended up ~23 GB
-  behind for days without a peep.
+  binary that Homebrew has since deleted. Don't ask me how I know this (my Postgres replicas once
+  ended up ~23 GB behind for days without me knowing lol).
 
 The one step that can't be automated is the Local Network prompt. After an upgrade, I hop onto each
 Mac via Guacamole and click "Allow" for the freshly signed binaries.
