@@ -18,7 +18,7 @@
 		"@astrojs/rss": "4.0.19",
 		"@astrojs/sitemap": "3.7.5",
 		"@mdi/js": "7.4.47",
-		"astro": "7.4.7"
+		"astro": "7.4.12"
 	},
 	"devDependencies": {
 		"@astrojs/check": "0.9.12",
