@@ -159,18 +159,18 @@ Jellify datacenter now, and if I ever want a Windows box, it can join too.
 #### The Container Runtime: Apple Container
 
 Not everything I run ships as a native macOS app, though. A lot of apps I deploy only come as an OCI
-image, and I need a container runtime to bring them online. The obvious choice is Docker; however,
-on macOS that usually means running a full install of
-[Docker Desktop](https://www.docker.com/products/docker-desktop/), or something like
+image, and I need a container runtime to bring them online. The obvious choice is Docker, whether
+through [Docker Desktop](https://www.docker.com/products/docker-desktop/) or something lighter like
 [Colima](https://github.com/abiosoft/colima). [Podman](https://podman.io) is also an option, and
 even has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I opted
 instead to write my own task driver for Apple's [`container`](https://github.com/apple/container)
 tool, which runs each Linux container in its own lightweight VM on the
 [Virtualization framework](https://developer.apple.com/documentation/virtualization).
 
-Both Docker and Podman work the same way on the Mac: they boot one big Linux VM in the background
-and run every container inside of it. That VM is a box I have to size up front, carving out CPU and
-memory whether anything is running or not, and when it gets wedged, every container on that node
+Docker Desktop, Colima, and Podman all work the same way on the Mac: they boot one big Linux VM in
+the background and run every container inside of it. Colima trims the overhead of Docker Desktop,
+but it's still that same single shared VM. That VM is a box I have to size up front, carving out CPU
+and memory whether anything is running or not, and when it gets wedged, every container on that node
 goes down with it. It's also one more thing for Nomad to know nothing about, since all it sees is a
 CLI talking to a daemon that's talking to a VM.
 
