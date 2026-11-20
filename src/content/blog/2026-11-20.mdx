@@ -418,6 +418,19 @@ rolls it out to the cluster. GitOps FTW.
 
 ## Power Levels
 
+So, how did that curiosity about performance per watt pan out? Pretty well, actually.
+
+Before the Macs, my three-node Harvester cluster, each with a Ryzen 7 5700G and an RTX 4060, idled
+somewhere in the mid 200Ws according to my UPS, and could easily pull around 400W once I threw some
+real load at it. That's from memory rather than any careful measurement, but it's in the right
+ballpark.
+
+The "Mac Rack Mini Pro" has twice as many nodes and still comes in well under that. It idles in the
+mid 100Ws, and under load it settles in the mid 200Ws, about where the old cluster used to _idle_.
+
+That's added up over time. Since making the switch, my electric bill has dropped by around 75-125kWh
+a month. Twice the nodes, less power.
+
 ## Should You Eat the Forbidden Fruit?
 
 Would I recommend it? For most people, as you might've guessed, absolutely not. If you don't _need_
