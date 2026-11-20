@@ -31,8 +31,8 @@ I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginn
 when the base model Mac Mini would set you back $599. Since then, my homelab's macOS footprint has
 grown from one node to six, with a full suite of infrastructure-as-code tooling behind it.
 
-With all of that time passing, I've gotten into a rhythm working with them and I have plenty of
-thoughts (`and code!`) to share.
+Nearly two years in, I've gotten into a rhythm working with them and I have plenty of thoughts
+(`and code!`) to share.
 
 ## Bearing Fruition
 
@@ -43,7 +43,7 @@ a rack full of Macs working together as an actual cluster would be classified.
 
 Part of why I went down this path was curiosity about Apple Silicon's performance per watt. A Mac
 Mini sips power at idle, runs nearly silent, and still has a Media Engine for video, a GPU that
-speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone that's
+speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone who's
 familiar with Apple products, that's a pretty compelling package to put in a rack.
 
 #### The Network
@@ -66,7 +66,7 @@ datacenters:
 
 - **Cosmonautical** - _the core cluster_
   - Runs Nomad and Consul as server-client combos
-  - Hosts everything I self-host, from Postgres to Jellyfin.
+  - Hosts everything I self-host, from Postgres to Jellyfin
 - **Jellify** - _client-only_
   - Runs
     [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
@@ -107,13 +107,13 @@ does limit the fun, but as you might imagine there is still plenty of fun to be 
 
 #### The OS: macOS
 
-The software base is of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
+The software base is, of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
 Silicon thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org),
-but it doesn't support M4 chips - at least as of the time of this writing.
+but it doesn't support M4 chips - at least as of this writing.
 
-macOS is very much designed for desktop, and there are a variety of challenges this has given me
-despite daily driving a MacBook Pro. Most of them come down to macOS assuming there's a person
-sitting in front of the screen, ready to click "Allow".
+macOS is very much designed for the desktop, and even daily driving a MacBook Pro didn't prepare me
+for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
+in front of the screen, ready to click "Allow".
 
 **[Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
 is the Achilles' heel.** Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps
@@ -137,23 +137,23 @@ the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io
 built and designed with Linux in mind, relying on Linux primitives to do its job.
 
 I _could_ have run a Linux VM atop macOS to make this work, but that's an extra layer of complexity
-every node and it walls workloads off from the things that are fun about Apple Silicon in the first
-place: the Media Engine, [Metal](https://developer.apple.com/metal/), and
+on every node and it walls workloads off from the things that are fun about Apple Silicon in the
+first place: the Media Engine, [Metal](https://developer.apple.com/metal/), and
 [CoreML](https://developer.apple.com/machine-learning/core-ml/).
 
 [Nomad](https://www.nomadproject.io) ended up being a perfect fit. It's a single macOS binary, and
 its [`raw_exec`](https://developer.hashicorp.com/nomad/docs/job-declare/task-driver/raw_exec) driver
 can schedule jobs straight on the host. That means [Jellyfin](https://jellyfin.org) gets hardware
 transcoding, [Ollama](https://ollama.com) gets Metal, and CoreML apps get the Neural Engine, all
-without any GPU passthrough to setup. Nice.
+without any GPU passthrough to set up. Nice.
 
 Nomad is also multi-platform, so the cluster isn't locked into macOS. I've got Linux nodes in the
-Jellify datacenter now, and if I ever want a Windows box that can join too.
+Jellify datacenter now, and if I ever want a Windows box, it can join too.
 
 #### The Container Runtime: Apple Container
 
 Not everything I run ships as a native macOS app, though. A lot of apps I deploy ship only an OCI
-image, and we need a container runtime to bring them online. The obvious choice is Docker, however
+image, and I need a container runtime to bring them online. The obvious choice is Docker; however,
 on macOS that means running a full install of
 [Docker Desktop](https://www.docker.com/products/docker-desktop/). [Podman](https://podman.io) is
 also an option, and even has a
@@ -180,7 +180,7 @@ against it. On a cluster that's all-in on Apple Silicon, using Apple's own conta
 like the natural fit. It's even open source.
 
 If you'd like to try it out for yourself, you can grab the latest release from
-[my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases)
+[my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases).
 
 #### The Service Mesh: Consul
 
@@ -196,11 +196,11 @@ servers.
 
 #### The Management: Ansible
 
-Setting up six Macs by hand was never going to happen, I'm far too lazy for that.
+Setting up six Macs by hand was never going to happen. I'm far too lazy for that.
 
-[Ansible](https://www.ansible.com) ended up being a perfect fit for managing this six pack. Running
-over SSH and leveraging Python on the target, Ansible needs no additional dependencies outside of
-what is preinstalled on every target Mac. There's nothing to bootstrap beyond flipping on
+[Ansible](https://www.ansible.com) was the obvious choice for managing this six pack. Running over
+SSH and leveraging Python on the target, Ansible needs no additional dependencies outside of what is
+preinstalled on every target Mac. There's nothing to bootstrap beyond flipping on
 [Remote Login](https://support.apple.com/guide/mac-help/allow-a-remote-computer-to-access-your-mac-mchlp1066/mac).
 
 Since adopting Ansible as my management tool of choice, I've built up quite a collection of
@@ -221,9 +221,9 @@ collections. My playbooks have grown into a nice lil family and are
   Ubuntu cluster deploys in a single run.
 
 The [Nomad jobs](https://github.com/Jellify-Music/Nomad-Jobs) themselves are defined in
-[Terraform](https://www.terraform.io), and both the Ansible playbooks and Terraform solutions get
-run by [Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very
-cluster it deploys to.
+[Terraform](https://www.terraform.io), and both the Ansible playbooks and Terraform configs get run
+by [Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very cluster
+it deploys to.
 
 #### Apple + IBM sounds familiar...
 
@@ -239,8 +239,7 @@ never dissolved.
 
 ## Roll out the barrels
 
-The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on their criticality of
-the application.
+The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on how critical they are.
 
 - Tier 1 (Core Infrastructure):
   - [Postgres](https://www.postgresql.org) (Patroni, using Consul as its DCS)
@@ -268,32 +267,13 @@ the application.
     - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) acts as an
       [HDHomeRun](https://www.silicondust.com) tuner for Live TV
   - [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI)
-    - a native `.app` for music sonic analysis, leveraging CoreML
+    - A native `.app` for music sonic analysis, leveraging CoreML
   - Ollama + [Open WebUI](https://openwebui.com)
-- Tier 3 (Secondary Applications)
+- Tier 3 (Secondary Applications):
   - [RomM](https://github.com/rommapp/romm)
   - Guacamole
   - [Seerr](https://github.com/seerr-team/seerr) for media requests
-  - GitHub Actions runners for Jellify
-    - A Nomad `system` job puts one ephemeral runner on every node tagged as a runner. Each runner
-      takes exactly one job, wipes its work folder, and registers a fresh replacement, so no build
-      ever sees the last one's leftovers.
-    - **[Maestro](https://maestro.mobile.dev) end-to-end tests** are the headline act.
-      - Every PR, plus a nightly run, builds a release copy of the app and drives it through the
-        full UI flow on _both_ an iOS Simulator and an
-        [Android emulator](https://developer.android.com/studio/run/emulator): setup and login,
-        home, quick actions, library, search, discover, settings, and the player and queue.
-      - The same flows run on both platforms, with small helper subflows papering over the
-        differences (iOS has no back button, for one).
-      - Screenshots, logs, and the UI hierarchy get uploaded as artifacts, and the result gets
-        posted to Discord.
-      - These run as `raw_exec` straight on macOS, using the Xcode, simulators, and Android SDK that
-        Ansible provisions.
-    - Everything else that doesn't need a Mac lands on x64 Linux runners in the same job:
-      - [Jest](https://jestjs.io) unit tests on every branch push
-      - JS bundle and Android APK builds on PRs
-      - Publishing OTA updates, and cleaning up the per-PR OTA branches once a PR closes
-    - Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware.
+  - GitHub Actions runners for Jellify (more on those below)
 
 Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm,
 AudioMuse), others are Linux containers through Apple `container` via my
@@ -304,7 +284,7 @@ AudioMuse), others are Linux containers through Apple `container` via my
 All of this would be a very expensive space heater if nobody used it. Cosmonautical is mostly used
 by me, my friends, and my family, and Jellyfin sees the most use by a mile.
 
-#### Jellyfin and Co.
+### Jellyfin and Co.
 
 Jellyfin is where I watch and listen to damn near everything. Movies, shows, and Live TV through
 Dispatcharr all come from the cluster, and when someone wants something that isn't in the library
@@ -340,10 +320,41 @@ Jellify checks if the plugin is installed on your server, and if it is, you can 
 and have AudioMuse-AI build it from your own library. All of that analysis runs on hardware I own,
 against music I own.
 
-#### Jellify Release Notes
+## Jellify Actions
 
-The Jellify datacenter is mostly walled off from Cosmonautical. The runners only run GitHub Actions
-and don't touch the rest of the cluster. There's one exception, though: release notes.
+The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad `system` job puts one
+ephemeral runner on every node tagged as a runner. Each runner takes exactly one job, wipes its work
+folder, and registers a fresh replacement, so no build ever sees the last one's leftovers.
+
+Any action that doesn't need a Mac lands on x64 Linux runners in the same job. These include:
+
+- [Jest](https://jestjs.io) unit tests on every branch push
+- JS bundle and Android APK builds on PRs
+- Publishing OTA updates, and cleaning up the per-PR OTA branches once a PR closes
+
+Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware.
+
+### Maestro Testing
+
+[Maestro](https://maestro.mobile.dev) end-to-end tests are the headline act, and the reason those
+runners need to be Macs in the first place: the iOS Simulator only runs on macOS.
+
+Every PR, plus a nightly run, builds a release copy of the app and drives it through the full UI
+flow on _both_ an iOS Simulator and an
+[Android emulator](https://developer.android.com/studio/run/emulator): setup and login, home, quick
+actions, library, search, discover, settings, and the player and queue. The same flows run on both
+platforms, with small helper subflows papering over the differences (iOS has no back button, for
+one).
+
+The tests run as `raw_exec` straight on macOS, using the Xcode, simulators, and Android SDK that
+Ansible provisions, so there's no VM between the emulator and the hardware. When a run finishes,
+screenshots, logs, and the UI hierarchy get uploaded as artifacts, and the result gets posted to
+Discord. If a PR breaks the player or the queue, I find out before it ships, not from a bug report.
+
+### Release Notes
+
+The Jellify datacenter is mostly walled off from Cosmonautical. There's one exception, though:
+release notes.
 
 Every Jellify release, both store builds and over-the-air updates, gets its notes written by an LLM
 running on the cluster. The pipeline is a composite GitHub Action with a few steps:
@@ -359,9 +370,9 @@ running on the cluster. The pipeline is a composite GitHub Action with a few ste
    they don't say anything about the release.
 3. **Write the narrative.** The PR titles, closed issues, and any commits that didn't come from a PR
    go to [`gemma4:12b`](https://ollama.com/library/gemma4), running on Ollama and served through the
-   OpenAI-compatible API in Open WebUI. The system prompt feeds in the commit messages and asks for
-   a short summary and three high profile bullet points. For OTA updates, it also mentions that the
-   update downloads the next time the app is opened.
+   OpenAI-compatible API in Open WebUI. The prompt asks for a short summary and three highlight
+   bullet points. For OTA updates, it also mentions that the update downloads the next time the app
+   is opened.
 4. **Ship it.** The narrative goes to [TestFlight](https://developer.apple.com/testflight/) with the
    iOS build, and to Discord through a
    [webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) that pings
@@ -371,7 +382,7 @@ running on the cluster. The pipeline is a composite GitHub Action with a few ste
 So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
 writing a word, and the words it does write are generated on a Mac Mini in my rack.
 
-## Standardized Operating Procedures
+## Standard Operating Procedures
 
 With vulnerabilities landing faster than ever, I've had plenty of practice running through patching
 procedures. Patches go in one of two ways: Homebrew via Ansible, or Nomad jobs via Semaphore.
@@ -404,6 +415,8 @@ opens a PR against my Terraform whenever a new release of an app ships. Once I m
 Semaphore runs `terraform plan` and then holds the change for my approval before `terraform apply`
 rolls it out to the cluster. GitOps FTW.
 
+## Power Levels
+
 ## Should You Eat the Forbidden Fruit?
 
 Would I recommend it? For most people, as you might've guessed, absolutely not. If you don't _need_
@@ -420,7 +433,7 @@ click through whatever prompt it's decided to throw at you this time.
 
 ## A Few Thank Yous
 
-There are a lot of people that have made this setup possible who deserve a salute.
+There are a lot of people who have made this setup possible who deserve a salute.
 
 #### The Maintainers
 
@@ -453,6 +466,6 @@ work powers my modern digital life.
 #### The Sponsors
 
 Finally, thank you to everyone who sponsors me on GitHub and Patreon. Your support is what lets me
-spend time building systems like this one and with Jellify.
+spend time building systems like this one and working on Jellify.
 
 <Sponsor />
