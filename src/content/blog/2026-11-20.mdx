@@ -175,10 +175,12 @@ goes down with it. It's also one more thing for Nomad to know nothing about, sin
 CLI talking to a daemon that's talking to a VM.
 
 Apple's `container` flips that around. There's no shared VM to babysit; each container _is_ its own
-VM, booting in about a second and sized to what the job asks for. When a Nomad allocation stops, its
-VM goes away and the memory goes back to macOS, ready for another job to use. Every container also
-gets its own IP address, so there's no port-forwarding dance between the host and a VM, and one
-misbehaving container can't take its neighbors out.
+VM, [booting in under a second](https://github.com/apple/containerization) and sized to what the job
+asks for. When a Nomad allocation stops, its VM goes away and the memory goes back to macOS, ready
+for another job to use. Every container also gets its own IP address, so there's no port-forwarding
+dance between the host and a VM, and one misbehaving container can't take its neighbors out. Apple's
+[Meet Containerization](https://developer.apple.com/videos/play/wwdc2025/346/) session from WWDC25
+goes deeper under the hood to show how it all works.
 
 It's also just... it's Apple's. It's written in [Swift](https://www.swift.org) and built on the same
 frameworks as the rest of the OS, so it gets better with every macOS release instead of fighting
@@ -193,9 +195,11 @@ Feature requests welcome :)
 
 Naturally, Nomad pairs nicely with [Consul](https://www.consul.io) for service discovery, health
 checks, and key/value storage. Every service registers itself with Consul, so jobs find each other
-by name over DNS (`<service>.service.consul`) instead of hard-coded IPs.
+by name over [DNS](https://developer.hashicorp.com/consul/docs/discover/dns)
+(`<service>.service.consul`) instead of hard-coded IPs.
 
-It pulls double duty, too: Consul is the distributed config store that
+It pulls double duty, too: Consul is the
+[distributed config store](https://patroni.readthedocs.io/en/latest/dynamic_configuration.html) that
 [Patroni](https://github.com/patroni/patroni) uses to handle Postgres failover, and it's where the
 [Terraform state](https://developer.hashicorp.com/terraform/language/backend/consul) for my Nomad
 jobs lives.
@@ -341,7 +345,8 @@ include:
 - JS bundle and Android APK builds on PRs
 - Publishing OTA updates, and cleaning up the per-PR OTA branches once a PR closes
 
-Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware.
+Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware, as
+[GitHub recommends](https://docs.github.com/en/actions/reference/security/secure-use#hardening-for-self-hosted-runners).
 
 ### Maestro Testing
 
@@ -382,9 +387,9 @@ with a few steps:
    they don't say anything about the release.
 3. **Write the narrative.** The PR titles, closed issues, and any commits that didn't come from a PR
    go to [`gemma4:12b`](https://ollama.com/library/gemma4), running on Ollama and served through the
-   OpenAI-compatible API in Open WebUI. The prompt asks for a short summary and three highlight
-   bullet points. For OTA updates, it also mentions that the update downloads the next time the app
-   is opened.
+   [OpenAI-compatible API](https://docs.openwebui.com/reference/api-endpoints/) in Open WebUI. The
+   prompt asks for a short summary and three highlight bullet points. For OTA updates, it also
+   mentions that the update downloads the next time the app is opened.
 4. **Ship it.** The narrative goes to [TestFlight](https://developer.apple.com/testflight/) with the
    iOS build, and to Discord through a
    [webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) that pings
@@ -436,12 +441,12 @@ idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw
 it. Those numbers come from remembering what my UPS showed, not careful measurement, but they're in
 the right ballpark.
 
-The new rack (affectionately referred to ass "Mac Rack Mini Pro") has twice as many nodes and still
+The new rack (affectionately referred to as "Mac Rack Mini Pro") has twice as many nodes and still
 comes in well under that. It idles in the mid 100Ws, and under load it settles in the mid 200Ws,
 about where the old cluster used to _idle_.
 
-That's added up over time. Since making the switch, my power usage has dropped by around 75-125kWh a
-month. Twice the nodes, less power.
+That's added up over time. Since making the switch, my power usage has dropped by around 75–125 kWh
+a month. Twice the nodes, less power.
 
 ## Should You Eat the Forbidden Fruit?
 
