@@ -1,4 +1,7 @@
 ---
+import { mdiApple, mdiDocker } from '@mdi/js'
+import Icon from '@/components/Icon.astro'
+
 // Shared Linux VM (Docker Desktop, Colima, Podman) vs. Apple container's VM per container
 const appleVms = [
 	{ size: 'lg', ip: '192.168.64.2' },
@@ -10,7 +13,10 @@ const appleVms = [
 <figure class='runtimes'>
 	<div class='panels'>
 		<div class='panel'>
-			<p class='label'>Docker Desktop, Colima, Podman</p>
+			<p class='label'>
+				<Icon path={mdiDocker} />
+				Docker Desktop, Colima, Podman
+			</p>
 			<div class='host'>
 				<span class='tag'>macOS</span>
 				<div class='vm shared'>
@@ -31,6 +37,7 @@ const appleVms = [
 		</div>
 		<div class='panel apple'>
 			<p class='label'>
+				<Icon path={mdiApple} />
 				Apple <code>container</code>
 			</p>
 			<div class='host'>
@@ -91,8 +98,19 @@ const appleVms = [
 	}
 
 	.label {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
 		margin: 0 0 0.75rem;
 		font-weight: 700;
+	}
+
+	.label :global(.icon) {
+		color: var(--neutral);
+	}
+
+	.apple .label :global(.icon) {
+		color: var(--primary);
 	}
 
 	.host {

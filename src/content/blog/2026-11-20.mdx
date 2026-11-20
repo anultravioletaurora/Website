@@ -80,10 +80,10 @@ company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
 Six Mac Minis live in two Sonnet [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
 enclosures, three to a 2U shelf. The Minis are split into two Nomad datacenters:
 
-- **Cosmonautical** - _the core cluster_
+- **Cosmonautical** • _the core cluster_
   - Runs Nomad and Consul as server-client combos
   - Hosts everything I self-host, from Postgres to Jellyfin
-- **Jellify** - _client-only_
+- **Jellify** • _client-only_
   - Runs
     [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
     for Jellify
@@ -181,12 +181,13 @@ Jellify datacenter now, and if I ever want a Windows box, it can join too.
 #### The Container Runtime: Apple Container
 
 Not everything I run ships as a native macOS app, though. A lot of apps I deploy only come as an OCI
-image, and I need a container runtime to bring them online. The obvious choice is Docker, whether
-through [Docker Desktop](https://www.docker.com/products/docker-desktop/) or something lighter like
-[Colima](https://github.com/abiosoft/colima). [Podman](https://podman.io) is also an option, and
-even has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I opted
-instead to write my own task driver for Apple's [`container`](https://github.com/apple/container)
-tool, which runs each Linux container in its own lightweight VM on the
+image, and so I needed a container runtime to bring them online. The obvious choice is Docker,
+whether through [Docker Desktop](https://www.docker.com/products/docker-desktop/) or something
+lighter like [Colima](https://github.com/abiosoft/colima). [Podman](https://podman.io) is also an
+option, and even has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I
+opted instead to write my own task driver for Apple's
+[`container`](https://github.com/apple/container) tool, which runs each Linux container in its own
+lightweight VM on the
 [Virtualization framework](https://developer.apple.com/documentation/virtualization).
 
 Docker Desktop, Colima, and Podman all work the same way on the Mac: they boot one big Linux VM in
@@ -208,8 +209,8 @@ goes deeper under the hood to show how it all works.
 
 It's also just... it's Apple's. It's written in [Swift](https://www.swift.org) and built on the same
 frameworks as the rest of the OS, so it gets better with every macOS release instead of fighting
-against it. On a cluster that's all-in on Apple Silicon, using Apple's own container runtime felt
-like the natural fit. It's even open source.
+against it. On a cluster that's all-in on Apple Silicon where memory is at a premium, using Apple's
+own container runtime felt like the natural fit. It's even open source.
 
 If you'd like to try the driver out for yourself, you can grab the latest release from
 [my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases).
@@ -217,10 +218,11 @@ Feature requests welcome :)
 
 #### The Service Mesh: Consul
 
-Naturally, Nomad pairs nicely with [Consul](https://www.consul.io) for service discovery, health
-checks, and key/value storage. Every service registers itself with Consul, so jobs find each other
-by name over [DNS](https://developer.hashicorp.com/consul/docs/discover/dns)
-(`<service>.service.consul`) instead of hard-coded IPs.
+Being built under the same HashiCorp roof, Nomad pairs nicely with [Consul](https://www.consul.io)
+for service discovery, health checks, and key/value storage. Every service registers itself with
+Consul, so jobs find each other by name over
+[DNS](https://developer.hashicorp.com/consul/docs/discover/dns) (`<service>.service.consul`) instead
+of hard-coded IPs.
 
 It pulls double duty, too: Consul is the
 [distributed config store](https://patroni.readthedocs.io/en/latest/dynamic_configuration.html) that
@@ -239,7 +241,7 @@ provide. There's no agent to install and nothing else to bootstrap beyond flippi
 [Remote Login](https://support.apple.com/guide/mac-help/allow-a-remote-computer-to-access-your-mac-mchlp1066/mac).
 
 Since adopting Ansible as my management tool of choice, I've built up quite a collection of
-collections. They've grown into a nice lil family and are
+collections (Collectionception?). They've grown into a nice lil family and are
 [all published on Ansible Galaxy](https://galaxy.ansible.com/ui/namespaces/cosmonautical/):
 
 - [`cosmonautical.macible`](https://github.com/Cosmonautical-Cloud/Macible): generic macOS roles for
@@ -275,7 +277,7 @@ never dissolved.
 
 The jobs I run on the rack can be broken up into tiers, based on how critical they are.
 
-- Tier 1 (Core Infrastructure):
+- **Tier 1** • _Core Infrastructure_
   - [Postgres](https://www.postgresql.org) (Patroni, using Consul as its DCS)
     - A separate Nomad job takes a
       [`pg_dumpall`](https://www.postgresql.org/docs/current/app-pg-dumpall.html) every 6 hours
@@ -287,7 +289,7 @@ The jobs I run on the rack can be broken up into tiers, based on how critical th
   - [OpenLDAP](https://www.openldap.org) + [Keycloak](https://www.keycloak.org)
   - Semaphore
     - Runs the Ansible and Terraform that deploy everything else, including itself
-- Tier 2 (Critical Applications):
+- **Tier 2** • _Mission Critical Applications_
   - [Nextcloud](https://nextcloud.com)
     - Primary app is deployed as a Nomad service
     - Nomad batch jobs are deployed for Nextcloud tasks to run on schedule
@@ -304,7 +306,7 @@ The jobs I run on the rack can be broken up into tiers, based on how critical th
   - [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI)
     - A native `.app` for music sonic analysis, leveraging CoreML
   - Ollama + [Open WebUI](https://openwebui.com)
-- Tier 3 (Secondary Applications):
+- **Tier 3** • _Secondary Applications_
   - [RomM](https://github.com/rommapp/romm)
   - Guacamole
   - [Seerr](https://github.com/seerr-team/seerr) for media requests
@@ -458,9 +460,9 @@ opens a PR against my Terraform whenever a new release of an app ships. Once I m
 Semaphore runs `terraform plan` and then holds the change for my approval before `terraform apply`
 rolls it out to the cluster. GitOps FTW.
 
-## Power Levels
+## The Power to Be Your Best
 
-So, how did that curiosity about performance per watt pan out? Pretty well, actually.
+So, how did my curiosity about performance per watt pan out? Pretty well, actually.
 
 Before the Macs, my three-node Harvester cluster (each node with a Ryzen 7 5700G and an RTX 4060)
 idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw some real load at
@@ -469,7 +471,9 @@ the right ballpark.
 
 The new rack (affectionately referred to as "Mac Rack Mini Pro") has twice as many nodes and still
 comes in well under that. It idles in the mid 100Ws, and under load it settles in the mid 200Ws,
-about where the old cluster used to _idle_.
+about where the old cluster used to _idle_. Those are whole-rack numbers by the way: the UPS also
+powers the networking gear, the UNAS, and the DAS, so the Minis themselves are drawing even less
+than that.
 
 <PowerChart />
 
@@ -478,9 +482,9 @@ a month. Twice the nodes, less power.
 
 ## Should You Eat the Forbidden Fruit?
 
-Would I recommend it? For most people, as you might've guessed, absolutely not. If you don't _need_
-macOS, a cheaper Linux box with discrete graphics for hardware acceleration will get you to the same
-place with far less friction.
+For most people, as you might've guessed, absolutely not. If you don't _need_ macOS, a cheaper Linux
+box with discrete graphics for hardware acceleration will get you to the same place with far less
+friction.
 
 But if you're a die-hard Apple fan, appreciate funky hardware, or your use case actually requires
 Apple's software like Xcode, the seeds you sow will yield a nice harvest. The Minis are whisper
@@ -492,7 +496,7 @@ click through whatever prompt it's decided to throw at you this time.
 
 ## A Few Thank Yous
 
-A lot of people made this setup possible, and they deserve a salute.
+A lot of people made this setup possible and inspired me to build it, and they deserve a salute.
 
 ### The Maintainers
 
@@ -522,6 +526,9 @@ work powers my modern digital life.
 
 Some people showed me this was possible before I ever racked a Mac. Thank you to:
 
+- [NeptuneHub](https://github.com/NeptuneHub), who has been realizing my dream of open source sonic
+  analysis with [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI), and made it possible to
+  run it natively on Apple Silicon
 - [Jeff Geerling](https://www.jeffgeerling.com), whose
   [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
   Homebrew and Mac App Store installs in my playbooks, and whose

@@ -96,6 +96,15 @@ h1 {
 	line-height: 1.1;
 }
 
+/* Emphasis is pink, unless it's inside a link, which already stands out */
+em {
+	color: var(--accent);
+}
+
+a em {
+	color: inherit;
+}
+
 :focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
