@@ -62,12 +62,12 @@ console for managing everything remotely. The
 backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
 doesn't need the extra bandwidth.
 
-Only Cosmonautical gets the 10Gbit backbone, and that comes down to how much data its nodes move
-between each other. Jellyfin, Nextcloud, and friends read their libraries over NFS from the UNAS,
-SeaweedFS replicates every write across its three volume servers, and Patroni streams every Postgres
-change from the primary to its replicas. A gigabit link tops out around 115 MB/s, which that mix can
-eat up on its own, and when it does, everything sharing the link slows down with it. With ten times
-the headroom, a replica catching up or a library scan doesn't get in the way of someone's movie. The
+Only Cosmonautical gets the 10Gbit backbone, because of how much data its nodes move between each
+other. Jellyfin, Nextcloud, and friends read their libraries over NFS from the UNAS, SeaweedFS
+replicates every write across its three volume servers, and Patroni streams every Postgres change
+from the primary to its replicas. A gigabit link tops out around 115 MB/s, which that mix can eat up
+on its own, and when it does, everything sharing the link slows down with it. With ten times the
+headroom, a replica catching up or a library scan doesn't get in the way of someone's movie. The
 Jellify nodes mostly talk to GitHub, where my internet connection is the bottleneck long before the
 switch is, so 1Gbit through the USW-24 is plenty.
 
