@@ -57,7 +57,7 @@ const background = Buffer.from(`
 	<g font-family="Allo, Helvetica Neue, Helvetica, Arial, sans-serif" fill="#ffffff">
 		<text x="80" y="250" font-size="40" font-weight="600" fill="#c9c6d6">Hi, I'm</text>
 		<text x="80" y="340" font-size="88" font-weight="800" fill="url(#accent)">Violet Caulfield</text>
-		<text x="80" y="420" font-size="32" fill="#c9c6d6">Software engineer · Creator of Jellify</text>
+		<text x="80" y="420" font-size="32" fill="#c9c6d6">Software engineer</text>
 		<text x="80" y="510" font-size="28" font-weight="600" fill="#887bff">violetcaulfield.com</text>
 	</g>
 </svg>`)
