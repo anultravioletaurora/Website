@@ -1,7 +1,7 @@
 ---
 title: iSelfhost
 date: 2026-11-20
-description: An orchestrated Apple orchard
+description: Running a six-node Mac Mini cluster with Nomad, Consul, and Ansible
 ---
 
 import { Image } from 'astro:assets'
@@ -17,15 +17,16 @@ import Sponsor from '@/components/Sponsor.astro'
     loading='eager'
     fetchpriority='high'
   />
-  <figcaption>Wicked Power; Unapologetically Aluminum</figcaption>
+  <figcaption>Wicked Power; Unapologetically Aluminum; An Orchestrated Apple Orchard</figcaption>
 </figure>
 
 ## An Apple a Day
 
-I recently made a [post on my LinkedIn](https://lnkd.in/p/gEtWFG6H) that got some attention. It was
-a picture of my racked Mac Minis that power my digital life, and a brief overview of what I'm using
-them for. I got some asks for a blog post discussing it further, and I'm more than happy to oblige
-:)
+I recently made a
+[post on my LinkedIn](https://www.linkedin.com/posts/violet-caulfield-0a422b132_homelab-mac-jellyfin-share-7528837465164447744-ig4e/)
+that got some attention. It was a picture of my racked Mac Minis that power my digital life, and a
+brief overview of what I'm using them for. I got some asks for a blog post discussing it further,
+and I'm more than happy to oblige :)
 
 I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginning of 2025, back
 when the base model Mac Mini would set you back $599. Since then, my homelab's macOS footprint has
@@ -57,7 +58,7 @@ doesn't need the extra bandwidth.
 
 My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
-company, so I found it fitting to bring hardware from those two companies together.
+company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
 
 ### The Compute
 
@@ -138,7 +139,7 @@ properly.
 ### The Orchestrator: Nomad
 
 With multiple nodes running, I wanted to have an orchestrator to keep everything in check. Before
-the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io) cluster, so
+the Macs, my homelab ran on a 3-node [Harvester](https://harvesterhci.io) cluster, so
 [Kubernetes](https://kubernetes.io) was what I reached for first. The problem is that Kubernetes is
 built and designed with Linux in mind, relying on Linux primitives to do its job.
 
@@ -331,7 +332,7 @@ Jellify checks if the plugin is installed on your server, and if it is, you can 
 and have AudioMuse-AI build it from your own library. All of that analysis runs on hardware I own,
 against music I own.
 
-## Jellify Actions
+### Jellify Actions
 
 The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad
 [`system` job](https://developer.hashicorp.com/nomad/docs/concepts/scheduling/schedulers) puts one
@@ -348,7 +349,7 @@ include:
 Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware, as
 [GitHub recommends](https://docs.github.com/en/actions/reference/security/secure-use#hardening-for-self-hosted-runners).
 
-### Maestro Testing
+#### Maestro Testing
 
 [Maestro](https://maestro.mobile.dev) end-to-end tests are the headline act, and the reason those
 runners need to be Macs in the first place: the iOS Simulator only runs on macOS.
@@ -366,7 +367,7 @@ screenshots, logs, and the UI hierarchy get uploaded as artifacts, and the resul
 [Discord](https://discord.gg/yf8fBatktn). If a PR breaks the player or the queue, I find out before
 it ships, not from a bug report.
 
-### Release Notes
+#### Release Notes
 
 The Jellify datacenter is mostly walled off from Cosmonautical. There's one exception, though:
 release notes.
