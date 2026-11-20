@@ -13,7 +13,8 @@
 		"typecheck": "astro check",
 		"og-image": "bun scripts/og-image.mjs",
 		"deploy:version": "bun run build && wrangler versions upload",
-		"deploy": "bun run build && wrangler deploy"
+		"deploy": "bun run build && wrangler deploy",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@astrojs/mdx": "8.1.6",
@@ -29,12 +30,17 @@
 		"eslint": "9.39.5",
 		"eslint-plugin-astro": "3.2.1",
 		"globals": "17.14.0",
+		"husky": "9.1.7",
+		"lint-staged": "17.6.1",
 		"prettier": "3.10.1",
 		"prettier-plugin-astro": "1.1.2",
 		"sharp": "0.35.5",
 		"typescript": "6.0.3",
 		"typescript-eslint": "8.72.2",
 		"wrangler": "4.158.0"
+	},
+	"lint-staged": {
+		"*": "prettier --write --ignore-unknown"
 	},
 	"packageManager": "bun@1.4.2"
 }
