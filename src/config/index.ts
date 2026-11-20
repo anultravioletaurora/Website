@@ -5,6 +5,7 @@ import {
 	mdiGithub,
 	mdiLinkedin,
 	mdiMastodon,
+	mdiPatreon,
 	mdiPost,
 	mdiJellyfish,
 	mdiReddit,
@@ -68,6 +69,20 @@ export const socialLinks: Link[] = [
 		icon: mdiReddit,
 		href: 'https://www.reddit.com/user/anultravioletaurora',
 		description: 'u/anultravioletaurora',
+	},
+]
+
+// Shown in the Sponsor card at the end of blog posts
+export const sponsorLinks: Link[] = [
+	{
+		label: 'Sponsors',
+		icon: mdiGithub,
+		href: 'https://github.com/sponsors/anultravioletaurora',
+	},
+	{
+		label: 'Patreon',
+		icon: mdiPatreon,
+		href: 'https://www.patreon.com/anultravioletaurora',
 	},
 ]
 
