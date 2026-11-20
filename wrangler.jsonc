@@ -15,6 +15,11 @@
 	 */
 	"routes": [{ "pattern": "violetcaulfield.com", "custom_domain": true }],
 	/**
+	 * Lets CI upload PR versions to their own preview URLs on workers.dev
+	 * https://developers.cloudflare.com/workers/configuration/previews/
+	 */
+	"preview_urls": true,
+	/**
 	 * The site is fully static, so the Worker only serves the build output
 	 * https://developers.cloudflare.com/workers/static-assets/
 	 */

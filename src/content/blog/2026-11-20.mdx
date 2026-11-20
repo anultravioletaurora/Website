@@ -22,17 +22,47 @@ I recently made a [post on my LinkedIn](https://lnkd.in/p/gEtWFG6H) that got som
 that power my digital life, and a brief overview of what I'm using them for. I got some asks for a blog post discussing it further, 
 and I'm more than happy to oblige :)
 
-I started hoarding M4 Mac Minis at the beginning of 2025, back when the base model Mac Mini would set you back $599. 
+I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginning of 2025, back when the base model Mac Mini would set you back $599. 
 Since then, my homelab's macOS footprint has grown from one node to six, with a full suite of infrastructure-as-code tooling behind it. 
 
 With all of that time passing, I've gotten into a rhythm working with them and I have plenty of thoughts (`and code!`) to share.
 
 ## Wicked Power; Unapologetically Aluminum
 
-My homelab uses Unifi networking 
+Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the PowerMac G4 was so powerful it counted
+as a supercomputer under US export rules, complete with tanks rolling in to guard it. A rack full of Macs working together as an actual
+cluster is a little closer to that fantasy than anything Apple shipped back then.
 
-Unifi networking
-My favorite Ubiquiti Networks fun fact is that founder Robert Pera had worked at Apple before starting the company.
+Part of why I went down this path was curiosity about Apple Silicon's performance per watt. A Mac Mini sips power at idle, runs nearly
+silent, and still has a Media Engine for video, a GPU that speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7,
+that's a pretty compelling package to put in a rack.
+
+#### The Network
+
+My homelab uses [UniFi](https://ui.com) networking throughout. The Dream Machine Pro handles routing and doubles as the console for
+managing everything remotely. The Aggregation switch provides the 10Gbit backbone, and a 24-port switch handles everything that
+doesn't need the extra bandwidth.
+
+My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) 
+had worked at Apple before starting the company, so I found it fitting to bring hardware from those two companies together.
+
+#### The Compute
+
+Six Mac Minis live in Sonnet's RackMac Mini enclosures, three to a shelf, each labeled with its hostname. The Minis are split into two Nomad datacenters:
+
+- **Cosmonautical**
+    - The core cluster. 
+    - Runs Nomad and Consul as server-client combos 
+    - Hosts everything I self-host, from Postgres to Jellyfin.
+- **Jellify**
+    - Client-only 
+    - Primarily runs GitHub Actions runners for [Jellify](https://jellify.app). 
+        - Xcode, Maestro, simulators, and the Android SDK are all provisioned by Ansible, so a fresh Mac goes from unboxed to building and testing apps with a single playbook run.
+
+#### The Storage
+
+Bulk, SSD storage lives on a UNAS Pro 8, which serves NFS shares (music, books, ROMs and so on) to the whole cluster. A DIY Thunderbolt DAS
+holds 10 hard drives and is attached directly to Cassiopeia.
 
 ### Specs
 
@@ -44,15 +74,13 @@ My favorite Ubiquiti Networks fun fact is that founder Robert Pera had worked at
     - Unifi USG-24
         - Standard networking backbone
 - Compute
-    - 3 M4 Pro Mac Minis (24GB RAM)
+    - 3 M4 Pro Mac Minis (24GB RAM each)
         - The "Cosmonautical" datacenter
-    - 3 M4 Mac Minis (16GB RAM)
-        - The "Jellify" datacenter
+    - 3 M4 Mac Minis (16GB RAM each)
+        - The "[Jellify](https://jellify.app)" datacenter
 - Storage
     - UNAS Pro 8
     - DIY Thunderbolt DAS
-
-[Apple's PowerMac G4 Supercomputer / Tanks ad from 1999](https://www.youtube.com/watch?v=OoxvLq0dFvw).
 
 ## Software Sells Hardware
 
@@ -67,10 +95,10 @@ on [Asahi Linux](https://asahilinux.org), but it doesn't support M4 chips at lea
 macOS is very much designed for desktop, and there are a variety of challenges this has given me despite daily driving a MacBook Pro.
 Most of them come down to macOS assuming there's a person sitting in front of the screen, ready to click "Allow".
 
-**Local Network privacy is the final boss.** Since macOS Sequoia, apps need permission to talk to devices on the local network,
+**[Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy) is the final boss.** Since macOS Sequoia, apps need permission to talk to devices on the local network,
 and that permission is granted through a GUI prompt. That's great on a laptop, and not great on a headless server. It's tied to the
-binary's code signature, so every time Homebrew upgrades a service like `consul` or `php`, macOS treats the new binary as a stranger
-and wants a fresh click. It can't be scripted either, since the permissions database is protected by System Integrity Protection.
+binary's code signature, so every time [Homebrew](https://brew.sh) upgrades a service like `consul` or `php`, macOS treats the new binary as a stranger
+and wants a fresh click. It can't be scripted either, since the permissions database is protected by [System Integrity Protection](https://support.apple.com/en-us/102149).
 It's pretty frustrating: the daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
 
 **Upgrades swap the binary, not the process.** On Linux, a package upgrade typically comes with a service restart. Homebrew just
@@ -78,19 +106,20 @@ replaces the file on disk, so the old version keeps happily running until someth
 2.0.4 was installed, and long-running processes launched from a binary that has since been deleted can lose their Local Network access
 entirely.
 
-None of this is a dealbreaker to me, but it means I'm using remote desktop / Guacamole ufter upgrades to enure that everything is connecting
+None of this has been a dealbreaker to me, but it means I'm using remote desktop / [Guacamole](https://guacamole.apache.org) ufter upgrades to ensure that everything is connecting
 properly.
 
 #### The Orchestrator: Nomad
 
 With multiple nodes running, I wanted to have an orchestrator to keep everything in check. 
 
-Before the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io) cluster, so Kubernetes was my obvious first thought. The problem is that Kubernetes is built and 
-designed with Linux in mind, relying on Linux primitives to do it's job. You *could* run a Linux VM atop macOS to make this work, but that's an extra layer of overhead 
-and complexity on every node and it walls workloads off from the things that make me excited about Apple Silicon in the first place: the Media Engine, Metal, and CoreML.
+Before the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io) cluster, so [Kubernetes](https://kubernetes.io) was what I reached for first. The problem is that Kubernetes is built and 
+designed with Linux in mind, relying on Linux primitives to do it's job. 
 
-[Nomad](https://www.nomadproject.io) ended up being a perfect fit. It's a single macOS binary, and its `raw_exec` driver can schedule jobs
-straight on the host. That means Jellyfin gets hardware transcoding, Ollama gets Metal, and CoreML apps get the Neural Engine,
+I *could* have run a Linux VM atop macOS to make this work, but that's an extra layer of complexity every node and it walls workloads off from the things that are fun about Apple Silicon in the first place: the Media Engine, [Metal](https://developer.apple.com/metal/), and [CoreML](https://developer.apple.com/machine-learning/core-ml/).
+
+[Nomad](https://www.nomadproject.io) ended up being a perfect fit. It's a single macOS binary, and its [`raw_exec`](https://developer.hashicorp.com/nomad/docs/job-declare/task-driver/raw_exec) driver can schedule jobs
+straight on the host. That means [Jellyfin](https://jellyfin.org) gets hardware transcoding, [Ollama](https://ollama.com) gets Metal, and CoreML apps get the Neural Engine,
 all without any GPU passthrough to setup. Nice.
 
 Nomad is also multi-platform, so the cluster isn't locked into macOS. Linux nodes can join, and if I ever want a Windows box that can join too.
@@ -98,11 +127,11 @@ Nomad is also multi-platform, so the cluster isn't locked into macOS. Linux node
 #### The Container Runtime: Apple Container
 
 Not everything I run ships as a macOS app, though. A lot of apps I deploy ship only as an OCI image, and for that we need a way to run
-the containers. The obvious choice is Docker, however on macOS that means running a full install of Docker Desktop. Podman is also an option,
-and has a task driver for Nomad.
+the containers. The obvious choice is Docker, however on macOS that means running a full install of [Docker Desktop](https://www.docker.com/products/docker-desktop/). [Podman](https://podman.io) is also an option,
+and has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman).
 
 I opted instead to write my own task driver for Apple's [`container`](https://github.com/apple/container) tool, 
-which runs each Linux container in its own lightweight VM on the Virtualization framework. If you'd like to try it out for yourself,
+which runs each Linux container in its own lightweight VM on the [Virtualization framework](https://developer.apple.com/documentation/virtualization). If you'd like to try it out for yourself,
 you can grab the latest release from [my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases)
 
 
@@ -119,16 +148,16 @@ all run as both Nomad and Consul servers.
 Setting up six Macs by hand was never going to happen, at least not more than once. [Ansible](https://www.ansible.com) works over SSH leveraging Python on the target, 
 both of which every Mac has so there's nothing to bootstrap beyond flipping on Remote Login.
 
-My playbooks have grown into a nice lil family:
+My playbooks have grown into a nice lil family, [all published on Ansible Galaxy](https://galaxy.ansible.com/ui/namespaces/cosmonautical/):
 
-- `cosmonautical.macible`: generic macOS roles for any Mac, server or workstation. Software Update, Homebrew, Xcode, the Android SDK,
-  NFS mounts, container runtimes, and so on. It's published on Ansible Galaxy as `cosmonautical.macible`.
-- `cosmonautical.nomadintosh`: Nomad and Consul on macOS, built on top of Macible. Homebrew for the binaries, LaunchAgents to keep them running.
-- `cosmonautical.nomaduntu`: the Ubuntu counterpart, using HashiCorp's apt repo and systemd.
-- `cosmonautical.nomadable`: the parent playbook. It routes each host to Nomadintosh or Nomaduntu based on its OS, so a mixed macOS and Ubuntu
+- [`cosmonautical.macible`](https://github.com/Cosmonautical-Cloud/Macible): generic macOS roles for any Mac, server or workstation. Software Update, Homebrew, Xcode, the Android SDK,
+  NFS mounts, container runtimes, etc.
+- [`cosmonautical.nomadintosh`](https://github.com/Cosmonautical-Cloud/Nomadintosh): Nomad and Consul on macOS, built on top of Macible. Homebrew for the binaries, LaunchAgents to keep them running.
+- [`cosmonautical.nomaduntu`](https://github.com/Cosmonautical-Cloud/Nomaduntu): the Ubuntu counterpart, using HashiCorp's apt repo and systemd.
+- [`cosmonautical.nomadable`](https://github.com/Cosmonautical-Cloud/Nomadable): the parent playbook. It routes each host to Nomadintosh or Nomaduntu based on its OS, so a mixed macOS and Ubuntu
   cluster deploys in a single run.
 
-The Nomad jobs themselves are defined in Terraform, and both the Ansible and Terraform get run by [Semaphore](https://semaphoreui.com),
+The [Nomad jobs](https://github.com/Jellify-Music/Nomad-Jobs) themselves are defined in [Terraform](https://www.terraform.io), and both the Ansible and Terraform get run by [Semaphore](https://semaphoreui.com),
 which (of course) runs as a Nomad job on the very cluster it deploys to.
 
 #### Apple + IBM sounds familar...
@@ -145,95 +174,58 @@ Just missing Motorola in the mix and it's like [AIM](https://en.wikipedia.org/wi
 The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on their criticality of the application.
 
 - Tier 1 (Core Infrastructure):
-  - Postgres (Patroni, using Consul as its DCS)
-  - Redis + Sentinel
-  - SeaweedFS (3 masters, 3 volume servers, a filer, NFS backup)
-  - Traefik + Fail2ban
-  - OpenLDAP + Keycloak
+  - [Postgres](https://www.postgresql.org) (Patroni, using Consul as its DCS)
+    - A separate Nomad job takes a `pg_dumpall` every 6 hours
+  - [Redis](https://redis.io) + [Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)
+  - [SeaweedFS](https://github.com/seaweedfs/seaweedfs) (3 masters, 3 volume servers, a filer, NFS backup)
+  - [Traefik](https://traefik.io) + [Fail2ban](https://github.com/fail2ban/fail2ban)
+  - [OpenLDAP](https://www.openldap.org) + [Keycloak](https://www.keycloak.org)
+  - Semaphore
+    - Runs the Ansible and Terraform that deploy everything else, including itself
 - Tier 2 (Critical Applications):
-  - Nextcloud 
-    - Separate Nomad jobs for cron, preview generation, and S3 backups
+  - [Nextcloud](https://nextcloud.com) 
+    - Separate Nomad jobs for cron, preview generation, ROM scans, and S3 backups
   - Jellyfin
-  - AudioMuse-AI 
+    - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) acts as an HDHomeRun tuner for Live TV
+  - [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI) 
     - a native `.app` for music sonic analysis, leveraging CoreML
-  - Ollama + Open WebUI
-  - Game servers (Minecraft, Valheim) and a Discord bot
+  - Ollama + [Open WebUI](https://openwebui.com)
 - Tier 3 (Secondary Applications)
-  - RomM
+  - [RomM](https://github.com/rommapp/romm)
   - Guacamole
+  - [Seerr](https://github.com/seerr-team/seerr) for media requests
 
 Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm, AudioMuse), others are Linux containers through Apple `container`
-via my `nomad-driver-container` plugin.
+via my [`nomad-driver-container`](https://github.com/anultravioletaurora/nomad-driver-container) plugin.
 
 
+## Day to Day Operations
 
+With vulnerabilities landing faster than ever, I've had plenty of practice running through patching procedures. Patches go in one of two ways:
+Homebrew via Ansible, or Nomad jobs via Semaphore.
 
-## Notes: the hardware
+### Homebrewed
 
-- The `cosmonautical` datacenter is three Mac minis (2× M4, 1× M4 Pro), all Consul and Nomad servers.
-  - **cassiopeia**: Jellyfin, NFS exports, the Postgres primary most of the time, SSD RAID 0 and HDD RAID 5.
-  - **taurus**: AudioMuse-AI (the host that kept filling its disk, see below).
-  - **orion**: newest. Replaced betelgeuse on 2026-11-17, restored from betelgeuse's Time Machine backup. It took over betelgeuse's 10GbE ACASIS Thunderbolt adapter.
-- betelgeuse moved to client-only duty in the `jellify` datacenter.
-- The `jellify` datacenter: client-only Macs (galileo, hopper, …) that run GitHub Actions runners for Jellify's iOS and Android builds. Xcode, simulators, the Android SDK and Maestro are all provisioned by Ansible.
-- Networking: UniFi throughout, with a UniFi Drive (UNAS) serving NFS shares (Music, Books, ROMs, …).
-- Photo: `cluster.jpg` in Nomadintosh / nomad-driver-container shows the rack (orion, taurus, cassiopeia, galileo, hopper, lovelace).
+Homebrew upgrades get deployed by rerunning the Nomadintosh playbook. Every run upgrades Nomad, Consul, and the rest of the Homebrew packages in
+my inventory to their latest versions, so patching a host is as simple as running the playbook again.
 
-## Notes: war stories (macOS-isms you only learn by self-hosting on a Mac)
+Upgrading is the easy part. As I mentioned earlier, Homebrew swaps the binary, not the process, so the playbook also handles the restarts:
 
-- **TCC Local Network permission is the boss.**
-  - When Homebrew upgrades `nomad`, `consul` or `php`, the new binary has a new code signature, so macOS wants a fresh GUI consent prompt before it can reach the LAN.
-  - It can't be scripted: `TCC.db` is protected by SIP.
-  - Symptom: `no route to host` from the daemon while `nc` and `ssh` to the same IP work fine.
-- **Stale executors.** Nomad's `raw_exec` executors outlive agent restarts.
-  - Patroni was launched by an executor whose `nomad` binary Homebrew had deleted, so it lost Local Network access.
-  - Both Postgres replicas sat ~23 GB behind for days.
-  - Lesson: after a Nomad upgrade, restart long-running allocs, not just the agent.
-- **Homebrew swaps the binary, not the process.** Consul 2.0.3 kept running after 2.0.4 was installed.
-  - The Consul role's restart task was literally empty on macOS, which was the root cause.
-  - Fixed in Nomadintosh 4.0.0 with rolling restarts gated on autopilot health.
-- **`brew services restart consul` can bite.** If the custom LaunchAgent label is missing, Homebrew starts its own generic service in dev mode: a brand-new single-node `dc1` cluster on localhost.
-  - Use `launchctl kickstart -k gui/<uid>/homebrew.mxcl.consul` instead.
-- **IPv6 `utun` route garbage.** macOS piles up default IPv6 routes through dead `utunN` interfaces.
-  - Consul bound dual-stack on `0.0.0.0` and gossip intermittently went through them.
-  - Result: broken raft quorum and Patroni stuck.
-  - Deleting the routes didn't stick. Fix: bind to the literal IPv4 address (HashiCorp's own advice for multi-homed hosts).
-- **Orphaned Consul registrations.**
-  - Old DHCP addresses and IPv6 copies of Nomad's self-registration piled up (21 entries where there should be 9).
-  - A catalog-level deregister "worked" until the next anti-entropy sync put them back.
-  - Only an agent-level deregister on the owning node made it stick.
-- **Disk-full cascade on taurus.**
-  - Cause: AudioMuse-AI's CoreML compile cache leaked millions of `.bnnsir` bundles into one directory. The directory file itself was 80 MB, and `ls | wc -l` never finished.
-  - Knock-on effects:
-    - Consul's raft WAL on taurus got truncated.
-    - The leader then logged ~10 GB/day of `appendEntries rejected` (48 GB `consul.log`).
-    - The Patroni replica died and never came back after space was freed.
-    - A SeaweedFS system-job alloc got GC'd and never re-placed.
-  - Fixes:
-    - Upstream: AudioMuse-AI 3.7.x.
-    - Nomadintosh: a `log_rotate` role.
-    - Apple `container` doesn't clean up old images and containers (~90 GB reclaimed on one host).
-- **Time Machine vs. sparse VM disks.**
-  - betelgeuse's backup was ~900 GB because each Apple `container` rootfs is a 512 GiB sparse file. They use ~3 GB on disk but grow to ~66 GB each in the backup.
-  - Fix: exclude `~/Library/Application Support/com.apple.container`.
-- **Don't `container system start` over SSH.** It registers in the `user/<uid>` launchd domain, where Nomad's driver (in `gui/<uid>`) can't see it. Use the LaunchAgent. (nomad-driver-container#9)
-- **Replacing a node (betelgeuse → orion).**
-  - Time Machine restore, join as a 4th server, drain, then remove the old peer.
-  - Things that were hand-made on the old hosts and missing on the new one:
-    - `/etc/resolver/consul`
-    - `scutil --set HostName`
-    - UID 501 → 1000 for the NFS exports
-    - a Patroni venv
-    - NFS access lists
-  - DHCP reservations follow the MAC, so moving the Thunderbolt NIC moved the IP with it.
-  - Don't take two of four servers down at once (failure tolerance hits 0).
-- **Nextcloud upgrade foot-gun.**
-  - `occ upgrade` was `kill -9`'d after 90 s while copying apps to NFS, which left a half-copied Music app (323 of 467 files).
-  - Also: the start script only extracted the tarball when `version.php` was missing, so every Nextcloud version bump so far had silently been a no-op.
-- **dispatcharr ↔ Jellyfin Live TV.**
-  - A Postgres blip makes `/hdhr/discover.json` return 500, and Jellyfin reacts by deleting every Live TV channel. It heals on the next refresh.
-  - Swiftfin buffering came from dispatcharr's stream-switch thresholds being too eager.
-- **Unexplained:** TCP from the workstation subnet to individual host:port pairs times out intermittently (ping is fine, other ports are fine). Root cause still unknown; the workaround is `ssh -J` through another node.
+- **Nomad and Consul** restart one host at a time, and the playbook waits for the agent and the cluster to report healthy before moving on to
+  the next one. A run that upgrades every server never takes more than one of them out of quorum.
+- **Nomad jobs** running directly on macOS (`raw_exec`) get restarted afterwards, again one at a time. They'd otherwise keep running the old
+  binaries, under an executor started by the old `nomad` binary that Homebrew has since deleted, which is how my Postgres replicas once ended up
+  ~23 GB behind for days without a peep.
+
+The one step that can't be automated is the Local Network prompt. After an upgrade, I hop onto each Mac via Guacamole and click "Allow" for
+the freshly signed binaries.
+
+### Nomad Life
+
+Version bumps for Nomad jobs come from [Renovate](https://github.com/renovatebot/renovate), which opens a PR against my Terraform whenever a new
+release of an app ships. Once I merge it to `main`, Semaphore runs `terraform plan` and then holds the change for my approval before
+`terraform apply` rolls it out to the cluster. GitOps FTW.
+
 
 ## Notes: takeaways / angles for the post
 
@@ -244,8 +236,3 @@ via my `nomad-driver-container` plugin.
 - The cluster also does real work for Jellify (CI runners), not just a media server.
 - Possible tie-in to the intro: the PowerMac G4 "supercomputer" ad, then and now: a rack of aluminum Macs as an actual cluster.
 - Possible sections: "Why not Kubernetes", "The Ansible family tree", "Writing a Nomad driver for Apple container", "Things macOS does that Linux doesn't", "What I'd do differently".
-
-## Sources
-- Nomadable
-- Nomadintosh
-- Macible
