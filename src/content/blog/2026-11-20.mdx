@@ -1,20 +1,251 @@
 ---
 title: iSelfhost
 date: 2026-11-20
-description: An orchestrated orchard of Apples
+description: An orchestrated Apple orchard
 ---
 
+import { Image } from 'astro:assets'
+import rackPhoto from '../../assets/blog/iselfhost-rack.jpg'
 
+<Image
+	src={rackPhoto}
+	alt='A rack of UniFi networking gear above six Mac Minis in RackMac Mini enclosures, labeled orion, taurus, cassiopeia, galileo, hopper, and lovelace'
+	widths={[672, 1344, 1971]}
+	sizes='(max-width: 42rem) 100vw, 42rem'
+	loading='eager'
+	fetchpriority='high'
+/>
 
-The other day, I made a [post on my LinkedIn](https://lnkd.in/p/gEtWFG6H) briefly highlighting my rack of Mac Minis 
-that power 
+## An Apple a Day
 
-## Wicked power; unapologetically aluminum
+I recently made a [post on my LinkedIn](https://lnkd.in/p/gEtWFG6H) that got some attention. It was a picture of my racked Mac Minis 
+that power my digital life, and a brief overview of what I'm using them for. I got some asks for a blog post discussing it further, 
+and I'm more than happy to oblige :)
+
+I started hoarding M4 Mac Minis at the beginning of 2025, back when the base model Mac Mini would set you back $599. 
+Since then, my homelab's macOS footprint has grown from one node to six, with a full suite of infrastructure-as-code tooling behind it. 
+
+With all of that time passing, I've gotten into a rhythm working with them and I have plenty of thoughts (`and code!`) to share.
+
+## Wicked Power; Unapologetically Aluminum
+
+My homelab uses Unifi networking 
 
 Unifi networking
-
 My favorite Ubiquiti Networks fun fact is that founder Robert Pera had worked at Apple before starting the company.
+
+### Specs
+
+- Networking
+    - Unifi Dream Machine Pro
+        - Router and Unifi Cloud Key for remote access management
+    - Unifi Switch Aggregation
+        - 10Gbit networking backbone
+    - Unifi USG-24
+        - Standard networking backbone
+- Compute
+    - 3 M4 Pro Mac Minis (24GB RAM)
+        - The "Cosmonautical" datacenter
+    - 3 M4 Mac Minis (16GB RAM)
+        - The "Jellify" datacenter
+- Storage
+    - UNAS Pro 8
+    - DIY Thunderbolt DAS
 
 [Apple's PowerMac G4 Supercomputer / Tanks ad from 1999](https://www.youtube.com/watch?v=OoxvLq0dFvw).
 
+## Software Sells Hardware
 
+Hardware is nothing without the software to leverage it. Running bleeding edge, proprietary hardware does limit the fun,
+but there is still plenty of fun to be had.
+
+#### The OS: macOS
+
+The software base is of course, macOS. Linux *does* support Apple Silicon thanks to the people way smarter than me working
+on [Asahi Linux](https://asahilinux.org), but it doesn't support M4 chips at least as of the time of this writing.
+
+macOS is very much designed for desktop, and there are a variety of challenges this has given me despite daily driving a MacBook Pro.
+Most of them come down to macOS assuming there's a person sitting in front of the screen, ready to click "Allow".
+
+**Local Network privacy is the final boss.** Since macOS Sequoia, apps need permission to talk to devices on the local network,
+and that permission is granted through a GUI prompt. That's great on a laptop, and not great on a headless server. It's tied to the
+binary's code signature, so every time Homebrew upgrades a service like `consul` or `php`, macOS treats the new binary as a stranger
+and wants a fresh click. It can't be scripted either, since the permissions database is protected by System Integrity Protection.
+It's pretty frustrating: the daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
+
+**Upgrades swap the binary, not the process.** On Linux, a package upgrade typically comes with a service restart. Homebrew just
+replaces the file on disk, so the old version keeps happily running until something restarts it. I had Consul 2.0.3 running well after
+2.0.4 was installed, and long-running processes launched from a binary that has since been deleted can lose their Local Network access
+entirely.
+
+None of this is a dealbreaker to me, but it means I'm using remote desktop / Guacamole ufter upgrades to enure that everything is connecting
+properly.
+
+#### The Orchestrator: Nomad
+
+With multiple nodes running, I wanted to have an orchestrator to keep everything in check. 
+
+Before the Macs, my homelab ran on a 3-node [Rancher Harvester](https://harvesterhci.io) cluster, so Kubernetes was my obvious first thought. The problem is that Kubernetes is built and 
+designed with Linux in mind, relying on Linux primitives to do it's job. You *could* run a Linux VM atop macOS to make this work, but that's an extra layer of overhead 
+and complexity on every node and it walls workloads off from the things that make me excited about Apple Silicon in the first place: the Media Engine, Metal, and CoreML.
+
+[Nomad](https://www.nomadproject.io) ended up being a perfect fit. It's a single macOS binary, and its `raw_exec` driver can schedule jobs
+straight on the host. That means Jellyfin gets hardware transcoding, Ollama gets Metal, and CoreML apps get the Neural Engine,
+all without any GPU passthrough to setup. Nice.
+
+Nomad is also multi-platform, so the cluster isn't locked into macOS. Linux nodes can join, and if I ever want a Windows box that can join too.
+
+#### The Container Runtime: Apple Container
+
+Not everything I run ships as a macOS app, though. A lot of apps I deploy ship only as an OCI image, and for that we need a way to run
+the containers. The obvious choice is Docker, however on macOS that means running a full install of Docker Desktop. Podman is also an option,
+and has a task driver for Nomad.
+
+I opted instead to write my own task driver for Apple's [`container`](https://github.com/apple/container) tool, 
+which runs each Linux container in its own lightweight VM on the Virtualization framework. If you'd like to try it out for yourself,
+you can grab the latest release from [my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases)
+
+
+#### The Service Mesh: Consul
+
+Nomad pairs with [Consul](https://www.consul.io) for service discovery, health checks, and key/value storage. Every service
+registers itself with Consul, so jobs find each other by name over DNS (`<service>.service.consul`) instead of hard-coded IPs.
+It pulls double duty, too: Consul is the distributed config store that [Patroni](https://github.com/patroni/patroni) uses to handle
+Postgres failover, and it's where the Terraform state for my Nomad jobs lives. The three Macs in my `cosmonautical` datacenter
+all run as both Nomad and Consul servers.
+
+#### The Management: Ansible
+
+Setting up six Macs by hand was never going to happen, at least not more than once. [Ansible](https://www.ansible.com) works over SSH leveraging Python on the target, 
+both of which every Mac has so there's nothing to bootstrap beyond flipping on Remote Login.
+
+My playbooks have grown into a nice lil family:
+
+- `cosmonautical.macible`: generic macOS roles for any Mac, server or workstation. Software Update, Homebrew, Xcode, the Android SDK,
+  NFS mounts, container runtimes, and so on. It's published on Ansible Galaxy as `cosmonautical.macible`.
+- `cosmonautical.nomadintosh`: Nomad and Consul on macOS, built on top of Macible. Homebrew for the binaries, LaunchAgents to keep them running.
+- `cosmonautical.nomaduntu`: the Ubuntu counterpart, using HashiCorp's apt repo and systemd.
+- `cosmonautical.nomadable`: the parent playbook. It routes each host to Nomadintosh or Nomaduntu based on its OS, so a mixed macOS and Ubuntu
+  cluster deploys in a single run.
+
+The Nomad jobs themselves are defined in Terraform, and both the Ansible and Terraform get run by [Semaphore](https://semaphoreui.com),
+which (of course) runs as a Nomad job on the very cluster it deploys to.
+
+#### Apple + IBM sounds familar...
+
+If you're keeping score: Nomad, Consul, and Terraform come from HashiCorp, which IBM acquired in 2025, and Ansible comes from
+Red Hat, which IBM acquired back in 2019. So my homelab is *technically* Apple hardware running IBM software.
+
+Just missing Motorola in the mix and it's like [AIM](https://en.wikipedia.org/wiki/AIM_alliance) never dissolved.
+
+{/* Draft notes pulled from the Nomadintosh / Nomadable / Nomad-Jobs / nomad-driver-container history. Revise or cut freely. */}
+
+## Roll out the barrels
+
+The jobs I run on the Mac Rack Mini Pro can be broken up into tiers, based on their criticality of the application.
+
+- Tier 1 (Core Infrastructure):
+  - Postgres (Patroni, using Consul as its DCS)
+  - Redis + Sentinel
+  - SeaweedFS (3 masters, 3 volume servers, a filer, NFS backup)
+  - Traefik + Fail2ban
+  - OpenLDAP + Keycloak
+- Tier 2 (Critical Applications):
+  - Nextcloud 
+    - Separate Nomad jobs for cron, preview generation, and S3 backups
+  - Jellyfin
+  - AudioMuse-AI 
+    - a native `.app` for music sonic analysis, leveraging CoreML
+  - Ollama + Open WebUI
+  - Game servers (Minecraft, Valheim) and a Discord bot
+- Tier 3 (Secondary Applications)
+  - RomM
+  - Guacamole
+
+Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm, AudioMuse), others are Linux containers through Apple `container`
+via my `nomad-driver-container` plugin.
+
+
+
+
+## Notes: the hardware
+
+- The `cosmonautical` datacenter is three Mac minis (2× M4, 1× M4 Pro), all Consul and Nomad servers.
+  - **cassiopeia**: Jellyfin, NFS exports, the Postgres primary most of the time, SSD RAID 0 and HDD RAID 5.
+  - **taurus**: AudioMuse-AI (the host that kept filling its disk, see below).
+  - **orion**: newest. Replaced betelgeuse on 2026-11-17, restored from betelgeuse's Time Machine backup. It took over betelgeuse's 10GbE ACASIS Thunderbolt adapter.
+- betelgeuse moved to client-only duty in the `jellify` datacenter.
+- The `jellify` datacenter: client-only Macs (galileo, hopper, …) that run GitHub Actions runners for Jellify's iOS and Android builds. Xcode, simulators, the Android SDK and Maestro are all provisioned by Ansible.
+- Networking: UniFi throughout, with a UniFi Drive (UNAS) serving NFS shares (Music, Books, ROMs, …).
+- Photo: `cluster.jpg` in Nomadintosh / nomad-driver-container shows the rack (orion, taurus, cassiopeia, galileo, hopper, lovelace).
+
+## Notes: war stories (macOS-isms you only learn by self-hosting on a Mac)
+
+- **TCC Local Network permission is the boss.**
+  - When Homebrew upgrades `nomad`, `consul` or `php`, the new binary has a new code signature, so macOS wants a fresh GUI consent prompt before it can reach the LAN.
+  - It can't be scripted: `TCC.db` is protected by SIP.
+  - Symptom: `no route to host` from the daemon while `nc` and `ssh` to the same IP work fine.
+- **Stale executors.** Nomad's `raw_exec` executors outlive agent restarts.
+  - Patroni was launched by an executor whose `nomad` binary Homebrew had deleted, so it lost Local Network access.
+  - Both Postgres replicas sat ~23 GB behind for days.
+  - Lesson: after a Nomad upgrade, restart long-running allocs, not just the agent.
+- **Homebrew swaps the binary, not the process.** Consul 2.0.3 kept running after 2.0.4 was installed.
+  - The Consul role's restart task was literally empty on macOS, which was the root cause.
+  - Fixed in Nomadintosh 4.0.0 with rolling restarts gated on autopilot health.
+- **`brew services restart consul` can bite.** If the custom LaunchAgent label is missing, Homebrew starts its own generic service in dev mode: a brand-new single-node `dc1` cluster on localhost.
+  - Use `launchctl kickstart -k gui/<uid>/homebrew.mxcl.consul` instead.
+- **IPv6 `utun` route garbage.** macOS piles up default IPv6 routes through dead `utunN` interfaces.
+  - Consul bound dual-stack on `0.0.0.0` and gossip intermittently went through them.
+  - Result: broken raft quorum and Patroni stuck.
+  - Deleting the routes didn't stick. Fix: bind to the literal IPv4 address (HashiCorp's own advice for multi-homed hosts).
+- **Orphaned Consul registrations.**
+  - Old DHCP addresses and IPv6 copies of Nomad's self-registration piled up (21 entries where there should be 9).
+  - A catalog-level deregister "worked" until the next anti-entropy sync put them back.
+  - Only an agent-level deregister on the owning node made it stick.
+- **Disk-full cascade on taurus.**
+  - Cause: AudioMuse-AI's CoreML compile cache leaked millions of `.bnnsir` bundles into one directory. The directory file itself was 80 MB, and `ls | wc -l` never finished.
+  - Knock-on effects:
+    - Consul's raft WAL on taurus got truncated.
+    - The leader then logged ~10 GB/day of `appendEntries rejected` (48 GB `consul.log`).
+    - The Patroni replica died and never came back after space was freed.
+    - A SeaweedFS system-job alloc got GC'd and never re-placed.
+  - Fixes:
+    - Upstream: AudioMuse-AI 3.7.x.
+    - Nomadintosh: a `log_rotate` role.
+    - Apple `container` doesn't clean up old images and containers (~90 GB reclaimed on one host).
+- **Time Machine vs. sparse VM disks.**
+  - betelgeuse's backup was ~900 GB because each Apple `container` rootfs is a 512 GiB sparse file. They use ~3 GB on disk but grow to ~66 GB each in the backup.
+  - Fix: exclude `~/Library/Application Support/com.apple.container`.
+- **Don't `container system start` over SSH.** It registers in the `user/<uid>` launchd domain, where Nomad's driver (in `gui/<uid>`) can't see it. Use the LaunchAgent. (nomad-driver-container#9)
+- **Replacing a node (betelgeuse → orion).**
+  - Time Machine restore, join as a 4th server, drain, then remove the old peer.
+  - Things that were hand-made on the old hosts and missing on the new one:
+    - `/etc/resolver/consul`
+    - `scutil --set HostName`
+    - UID 501 → 1000 for the NFS exports
+    - a Patroni venv
+    - NFS access lists
+  - DHCP reservations follow the MAC, so moving the Thunderbolt NIC moved the IP with it.
+  - Don't take two of four servers down at once (failure tolerance hits 0).
+- **Nextcloud upgrade foot-gun.**
+  - `occ upgrade` was `kill -9`'d after 90 s while copying apps to NFS, which left a half-copied Music app (323 of 467 files).
+  - Also: the start script only extracted the tarball when `version.php` was missing, so every Nextcloud version bump so far had silently been a no-op.
+- **dispatcharr ↔ Jellyfin Live TV.**
+  - A Postgres blip makes `/hdhr/discover.json` return 500, and Jellyfin reacts by deleting every Live TV channel. It heals on the next refresh.
+  - Swiftfin buffering came from dispatcharr's stream-switch thresholds being too eager.
+- **Unexplained:** TCP from the workstation subnet to individual host:port pairs times out intermittently (ping is fine, other ports are fine). Root cause still unknown; the workaround is `ssh -J` through another node.
+
+## Notes: takeaways / angles for the post
+
+- macOS as a server OS works, but the friction comes from desktop-first assumptions: TCC prompts, `gui/<uid>` launchd domains, Homebrew upgrading binaries under live processes.
+- Native Nomad on Apple Silicon means hardware acceleration for free (Jellyfin transcoding, Ollama, CoreML) with no hypervisor tax.
+- Apple `container` plus a Nomad driver makes Linux workloads first-class next to native ones.
+- Everything is codified: Ansible for hosts, Terraform for jobs, Semaphore as the pipeline, Renovate for version bumps.
+- The cluster also does real work for Jellify (CI runners), not just a media server.
+- Possible tie-in to the intro: the PowerMac G4 "supercomputer" ad, then and now: a rack of aluminum Macs as an actual cluster.
+- Possible sections: "Why not Kubernetes", "The Ansible family tree", "Writing a Nomad driver for Apple container", "Things macOS does that Linux doesn't", "What I'd do differently".
+
+## Sources
+- Nomadable
+- Nomadintosh
+- Macible
