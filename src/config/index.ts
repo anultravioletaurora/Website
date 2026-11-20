@@ -1,8 +1,20 @@
 import type { Link } from '../types'
-import { mdiAccountCircleOutline, mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiJellyfish, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
+import {
+	mdiAccountCircleOutline,
+	mdiEmailOutline,
+	mdiGithub,
+	mdiLinkedin,
+	mdiMastodon,
+	mdiPost,
+	mdiJellyfish,
+	mdiReddit,
+	mdiRss,
+	mdiButterflyOutline,
+} from '@mdi/js'
 
 export const SITE_NAME = 'Violet Caulfield'
-export const SITE_DESCRIPTION = 'Software engineer from Wisconsin, and the creator of Jellify.'
+export const SITE_DESCRIPTION =
+	'Software engineer from Wisconsin, and the creator of Jellify.'
 
 // Forwarded to a personal inbox with Cloudflare Email Routing, so the real address stays private
 export const EMAIL = 'hello@violetcaulfield.com'
@@ -77,6 +89,7 @@ export const projects: Link[] = [
 		label: 'Jellify',
 		icon: mdiJellyfish,
 		href: 'https://jellify.app',
-		description: 'A free and open source music player for Jellyfin, available on iOS and Android.',
+		description:
+			'A free and open source music player for Jellyfin, available on iOS and Android.',
 	},
 ]

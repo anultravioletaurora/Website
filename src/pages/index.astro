@@ -19,11 +19,20 @@ const recentPosts = (await getPosts()).slice(0, 3)
 >
 	<main>
 		<section class='hero'>
-			<img class='avatar' src='/avatar.webp' alt={`Photo of ${SITE_NAME}`} width='160' height='160' />
+			<img
+				class='avatar'
+				src='/avatar.webp'
+				alt={`Photo of ${SITE_NAME}`}
+				width='160'
+				height='160'
+			/>
 			<p class='eyebrow'>Hi, I'm</p>
-			<h1><span class='gradient-text'>Violet Caulfield</span></h1>
+			<h1>
+				<span class='gradient-text'>Violet Caulfield</span>
+			</h1>
 			<p class='lede'>
-				I'm a software engineer from Wisconsin. I use JavaScript recreationally and post about my technological misadventures here.
+				I'm a software engineer from Wisconsin. I use JavaScript recreationally
+				and post about my technological misadventures here.
 			</p>
 
 			<div class='actions'>
@@ -31,70 +40,69 @@ const recentPosts = (await getPosts()).slice(0, 3)
 					Read the blog
 					<Icon path={mdiArrowRight} />
 				</a>
-				<a class='button secondary' href='/contact'>Get in touch</a>
+				<a class='button secondary' href='/contact'>
+					Get in touch
+				</a>
 			</div>
 
 			<ul class='social' aria-label='Elsewhere'>
-				{
-					socialLinks.map((link) => (
-						<li>
-							<a href={link.href} rel='me'>
-								<Icon path={link.icon} />
-								<span>{link.label}</span>
-							</a>
-						</li>
-					))
-				}
+				{socialLinks.map((link) => (
+					<li>
+						<a href={link.href} rel='me'>
+							<Icon path={link.icon} />
+							<span>{link.label}</span>
+						</a>
+					</li>
+				))}
 			</ul>
 		</section>
 
 		<section id='about' aria-labelledby='about-heading'>
 			<h2 id='about-heading'>About</h2>
 			<p>
-				I like software. Most of my free time goes into open source, especially Jellify.
+				I like software. Most of my free time goes into open source, especially
+				Jellify.
 			</p>
 		</section>
 
 		<section aria-labelledby='projects-heading'>
 			<h2 id='projects-heading'>Projects</h2>
 			<ul class='cards'>
-				{
-					projects.map((project) => (
-						<li>
-							<a class='card' href={project.href}>
-								<Icon path={project.icon} />
-								<span>
-									<strong>{project.label}</strong>
-									<small>{project.description}</small>
-								</span>
-							</a>
-						</li>
-					))
-				}
+				{projects.map((project) => (
+					<li>
+						<a class='card' href={project.href}>
+							<Icon path={project.icon} />
+							<span>
+								<strong>{project.label}</strong>
+								<small>{project.description}</small>
+							</span>
+						</a>
+					</li>
+				))}
 			</ul>
 		</section>
 
-		{
-			recentPosts.length > 0 && (
-				<section aria-labelledby='posts-heading'>
-					<div class='section-header'>
-						<h2 id='posts-heading'>Recent posts</h2>
-						<a href='/blog'>All posts →</a>
-					</div>
-					<ol class='cards'>
-						{recentPosts.map((post) => (
-							<li>
-								<a class='card post' href={`/blog/${post.id}`}>
-									<time datetime={post.data.date.toISOString()}>{formatPostDate(post.data.date)}</time>
-									<strong>{post.data.title}</strong>
-									<small>{getPostSnippet(post)}</small>
-								</a>
-							</li>
-						))}
-					</ol>
-				</section>
-			)
-		}
+		{recentPosts.length > 0 && (
+			<section aria-labelledby='posts-heading'>
+				<div class='section-header'>
+					<h2 id='posts-heading'>Recent posts</h2>
+					<a href='/blog'>All posts →</a>
+				</div>
+				<ol class='cards'>
+					{recentPosts.map((post) => (
+						<li>
+							<a class='card post' href={`/blog/${post.id}`}>
+								<time datetime={post.data.date.toISOString()}>
+									{formatPostDate(post.data.date)}
+								</time>
+								<strong>{post.data.title}</strong>
+								<small>{getPostSnippet(post)}</small>
+							</a>
+						</li>
+					))}
+				</ol>
+			</section>
+		)}
 	</main>
 </Layout>
 

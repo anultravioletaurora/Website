@@ -3,7 +3,9 @@ import { navLinks, socialLinks } from '@/config'
 import Icon from './Icon.astro'
 
 // GitHub and LinkedIn stay one tap away in the header; the rest live in the footer and on /contact
-const quickLinks = socialLinks.filter((link) => ['GitHub', 'LinkedIn'].includes(link.label))
+const quickLinks = socialLinks.filter((link) =>
+	['GitHub', 'LinkedIn'].includes(link.label),
+)
 ---
 
 <header>
@@ -14,25 +16,26 @@ const quickLinks = socialLinks.filter((link) => ['GitHub', 'LinkedIn'].includes(
 		</a>
 
 		<ul class='pages'>
-			{
-				navLinks.map((link) => (
-					<li>
-						<a href={link.href}>{link.label}</a>
-					</li>
-				))
-			}
+			{navLinks.map((link) => (
+				<li>
+					<a href={link.href}>{link.label}</a>
+				</li>
+			))}
 		</ul>
 
 		<ul class='social'>
-			{
-				quickLinks.map((link) => (
-					<li>
-						<a href={link.href} rel='me' aria-label={link.label} title={link.label}>
-							<Icon path={link.icon} />
-						</a>
-					</li>
-				))
-			}
+			{quickLinks.map((link) => (
+				<li>
+					<a
+						href={link.href}
+						rel='me'
+						aria-label={link.label}
+						title={link.label}
+					>
+						<Icon path={link.icon} />
+					</a>
+				</li>
+			))}
 		</ul>
 	</nav>
 </header>
@@ -45,7 +48,8 @@ const quickLinks = socialLinks.filter((link) => ['GitHub', 'LinkedIn'].includes(
 		background-color: var(--background-75);
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
-		border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+		border-bottom: 1px solid
+			color-mix(in srgb, var(--border-color) 40%, transparent);
 	}
 
 	nav {
@@ -98,7 +102,8 @@ const quickLinks = socialLinks.filter((link) => ['GitHub', 'LinkedIn'].includes(
 
 	.social {
 		padding-left: 0.75rem;
-		border-left: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+		border-left: 1px solid
+			color-mix(in srgb, var(--border-color) 40%, transparent);
 	}
 
 	.social a {

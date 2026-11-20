@@ -4,11 +4,11 @@ import { z } from 'astro/zod'
 
 /**
  * The blog collection defines the structure and metadata for blog posts.
- * 
+ *
  * Each blog post must have a title and a date, and can optionally have a description.
- * 
+ *
  * A post's file name is its URL: `2026-11-09.mdx` is served at /blog/2026-11-09.
- * 
+ *
  * A second post on the same date can be named `<date>-<slug>.mdx`.
  */
 const blog = defineCollection({
