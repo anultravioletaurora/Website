@@ -28,9 +28,9 @@ import ReleaseNotesPipeline from '@/components/ReleaseNotesPipeline.astro'
 
 I recently made a
 [post on my LinkedIn](https://www.linkedin.com/posts/violet-caulfield-0a422b132_homelab-mac-jellyfin-share-7528837465164447744-ig4e/)
-that got some attention. It was a picture of my racked Mac Minis that power my digital life, and a
-brief overview of what I'm using them for. I got some asks for a blog post discussing it further,
-and I'm more than happy to oblige :)
+that got some attention. It was a picture of my racked Mac Minis, and a brief overview of how they
+power my digital life. I got some asks for a blog post discussing it further, and I'm more than
+happy to oblige :)
 
 I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginning of 2025, back
 when the base model Mac Mini would set you back $599. Since then, my homelab's macOS footprint has
@@ -41,15 +41,17 @@ Nearly two years in, I've gotten into a rhythm working with them, and I have ple
 
 ## Bearing Fruition
 
-Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
-[Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
-supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder how
-a rack full of Macs working together as an actual cluster would be classified.
-
 Part of why I went down this path was curiosity about Apple Silicon's performance per watt. A Mac
 Mini sips power at idle, runs nearly silent, and still has a Media Engine for video, a GPU that
 speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone who's
 familiar with Apple products, that's a pretty compelling package to put in a rack.
+
+The other part was practical. I work on [Jellify](https://jellify.app), a music player for Jellyfin,
+and it ships on iOS. Building and testing an iOS app, even in a CI pipeline, requires Xcode, which
+requires macOS. If I was going to have Macs in the rack anyway, they might as well pull their weight
+running everything else too.
+
+Here's what that rack looks like, from the network on down.
 
 ### The Network
 
@@ -60,15 +62,23 @@ console for managing everything remotely. The
 backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
 doesn't need the extra bandwidth.
 
+Only Cosmonautical gets the 10Gbit backbone, and that comes down to how much data its nodes move
+between each other. Jellyfin, Nextcloud, and friends read their libraries over NFS from the UNAS,
+SeaweedFS replicates every write across its three volume servers, and Patroni streams every Postgres
+change from the primary to its replicas. A gigabit link tops out around 115 MB/s, which that mix can
+eat up on its own, and when it does, everything sharing the link slows down with it. With ten times
+the headroom, a replica catching up or a library scan doesn't get in the way of someone's movie. The
+Jellify nodes mostly talk to GitHub, where my internet connection is the bottleneck long before the
+switch is, so 1Gbit through the USW-24 is plenty.
+
 My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
 company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
 
 ### The Compute
 
-Six Mac Minis live in Sonnet's [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
-enclosures, three to a shelf, each labeled with its hostname. The Minis are split into two Nomad
-datacenters:
+Six Mac Minis live in two Sonnet [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
+enclosures, three to a 2U shelf. The Minis are split into two Nomad datacenters:
 
 - **Cosmonautical** - _the core cluster_
   - Runs Nomad and Consul as server-client combos
@@ -76,12 +86,17 @@ datacenters:
 - **Jellify** - _client-only_
   - Runs
     [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
-    for [Jellify](https://jellify.app), the music player for Jellyfin that I work on
+    for Jellify
     - [Xcode](https://developer.apple.com/xcode/), [Maestro](https://maestro.mobile.dev),
       simulators, and the [Android SDK](https://developer.android.com/studio) are all provisioned by
       Ansible, so a fresh Mac goes from unboxed to building and testing apps with a single playbook
       run.
   - Also home to a few x64 Linux nodes for the jobs that don't need a Mac
+
+Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
+[Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
+supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder how
+this rack full of Macs working together as an actual cluster would be classified.
 
 ### The Storage
 
