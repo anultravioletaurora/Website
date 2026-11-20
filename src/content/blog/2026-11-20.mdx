@@ -31,7 +31,7 @@ I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginn
 when the base model Mac Mini would set you back $599. Since then, my homelab's macOS footprint has
 grown from one node to six, with a full suite of infrastructure-as-code tooling behind it.
 
-Nearly two years in, I've gotten into a rhythm working with them and I have plenty of thoughts
+Nearly two years in, I've gotten into a rhythm working with them, and I have plenty of thoughts
 (`and code!`) to share.
 
 ## Bearing Fruition
@@ -70,7 +70,7 @@ datacenters:
 - **Jellify** - _client-only_
   - Runs
     [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
-    for [Jellify](https://jellify.app).
+    for [Jellify](https://jellify.app), the music player for Jellyfin that I work on
     - [Xcode](https://developer.apple.com/xcode/), Maestro, simulators, and the
       [Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh
       Mac goes from unboxed to building and testing apps with a single playbook run.
@@ -105,7 +105,7 @@ Cassiopeia.
 
 ## Software Sells Hardware
 
-Hardware is nothing without the software to leverage it. Running bleeding edge, proprietary hardware
+Hardware is nothing without the software to leverage it. Running bleeding-edge, proprietary hardware
 does limit the fun, but as you might imagine there is still plenty of fun to be had.
 
 ### The OS: macOS
@@ -182,7 +182,7 @@ frameworks as the rest of the OS, so it gets better with every macOS release ins
 against it. On a cluster that's all-in on Apple Silicon, using Apple's own container runtime felt
 like the natural fit. It's even open source.
 
-If you'd like to try it out for yourself, you can grab the latest release from
+If you'd like to try the driver out for yourself, you can grab the latest release from
 [my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases).
 
 #### The Service Mesh: Consul
@@ -420,10 +420,10 @@ rolls it out to the cluster. GitOps FTW.
 
 So, how did that curiosity about performance per watt pan out? Pretty well, actually.
 
-Before the Macs, my three-node Harvester cluster, each with a Ryzen 7 5700G and an RTX 4060, idled
-somewhere in the mid 200Ws according to my UPS, and could easily pull around 400W once I threw some
-real load at it. That's from memory rather than any careful measurement, but it's in the right
-ballpark.
+Before the Macs, my three-node Harvester cluster (each node with a Ryzen 7 5700G and an RTX 4060)
+idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw some real load at
+it. Those numbers come from remembering what my UPS showed, not careful measurement, but they're in
+the right ballpark.
 
 The "Mac Rack Mini Pro" has twice as many nodes and still comes in well under that. It idles in the
 mid 100Ws, and under load it settles in the mid 200Ws, about where the old cluster used to _idle_.
@@ -479,8 +479,8 @@ Some people showed me this was possible before I ever racked a Mac. Thank you to
 
 - [Jeff Geerling](https://www.jeffgeerling.com), whose
   [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
-  Homebrew and Mac App Store installs in my playbooks, and whose adventures with the Mac gave me the
-  confidence to build a Mac cluster in the first place
+  Homebrew and Mac App Store installs in my playbooks, and whose Mac adventures gave me the
+  confidence to build a cluster of my own
 
 ### The Sponsors
 
