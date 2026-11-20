@@ -7,6 +7,10 @@ description: Running a six-node Mac Mini cluster with Nomad, Consul, and Ansible
 import { Image } from 'astro:assets'
 import rackPhoto from '../../assets/blog/iselfhost-rack.jpg'
 import Sponsor from '@/components/Sponsor.astro'
+import ClusterMap from '@/components/ClusterMap.astro'
+import ContainerRuntimes from '@/components/ContainerRuntimes.astro'
+import PowerChart from '@/components/PowerChart.astro'
+import ReleaseNotesPipeline from '@/components/ReleaseNotesPipeline.astro'
 
 <figure>
   <Image
@@ -85,6 +89,8 @@ Bulk SSD storage lives on a [UNAS Pro 8](https://store.ui.com/us/en/products/una
 serves [NFS](https://en.wikipedia.org/wiki/Network_File_System) shares (music, books, ROMs and so
 on) to the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly to
 Cassiopeia.
+
+<ClusterMap />
 
 ### Tech Specs
 
@@ -182,6 +188,8 @@ for another job to use. Every container also gets its own IP address, so there's
 dance between the host and a VM, and one misbehaving container can't take its neighbors out. Apple's
 [Meet Containerization](https://developer.apple.com/videos/play/wwdc2025/346/) session from WWDC25
 goes deeper under the hood to show how it all works.
+
+<ContainerRuntimes />
 
 It's also just... it's Apple's. It's written in [Swift](https://www.swift.org) and built on the same
 frameworks as the rest of the OS, so it gets better with every macOS release instead of fighting
@@ -397,6 +405,8 @@ with a few steps:
    the release role. The GitHub release gets the narrative too, followed by the list of closed
    issues, merged PRs, and a thank-you to everyone who contributed.
 
+<ReleaseNotesPipeline />
+
 So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
 writing a word, all powered by a Mac Mini in my rack.
 
@@ -445,6 +455,8 @@ the right ballpark.
 The new rack (affectionately referred to as "Mac Rack Mini Pro") has twice as many nodes and still
 comes in well under that. It idles in the mid 100Ws, and under load it settles in the mid 200Ws,
 about where the old cluster used to _idle_.
+
+<PowerChart />
 
 That's added up over time. Since making the switch, my power usage has dropped by around 75–125 kWh
 a month. Twice the nodes, less power.
