@@ -1,17 +1,5 @@
 import type { Link } from '../types'
-import {
-	mdiAccountCircleOutline,
-	mdiEmailOutline,
-	mdiGithub,
-	mdiLinkedin,
-	mdiMastodon,
-	mdiPatreon,
-	mdiPost,
-	mdiJellyfish,
-	mdiReddit,
-	mdiRss,
-	mdiButterflyOutline,
-} from '@mdi/js'
+import { mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiJellyfish, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
 
 export const SITE_NAME = 'Violet Caulfield'
 export const SITE_DESCRIPTION =
@@ -21,11 +9,6 @@ export const SITE_DESCRIPTION =
 export const EMAIL = 'hello@violetcaulfield.com'
 
 export const navLinks: Link[] = [
-	{
-		label: 'About',
-		icon: mdiAccountCircleOutline,
-		href: '/#about',
-	},
 	{
 		label: 'Blog',
 		icon: mdiPost,
