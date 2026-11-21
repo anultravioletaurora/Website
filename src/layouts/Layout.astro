@@ -7,8 +7,13 @@ import { SITE_DESCRIPTION, SITE_NAME } from '@/config'
 interface Props {
 	title?: string
 	description?: string
+	// Path to the 1200x630 link preview image; defaults to the site-wide card
+	image?: string
+	imageAlt?: string
 	// Set on blog posts so link previews and search engines treat the page as an article
-	article?: { publishedTime: Date }
+	article?: { publishedTime: Date; modifiedTime?: Date }
+	// Keeps the page out of search results, e.g. the 404 page
+	noindex?: boolean
 	// Structured data (https://schema.org) rendered as JSON-LD
 	schema?: Record<string, unknown>
 }
@@ -16,7 +21,10 @@ interface Props {
 const {
 	title = SITE_NAME,
 	description = SITE_DESCRIPTION,
+	image: imagePath = '/og.png',
+	imageAlt = SITE_NAME,
 	article,
+	noindex,
 	schema,
 } = Astro.props
 
@@ -25,7 +33,7 @@ const canonical = new URL(
 	Astro.url.pathname.replace(/(\/index)?\.html$|\/$/, '') || '/',
 	Astro.site,
 )
-const image = new URL('/og.png', Astro.site)
+const image = new URL(imagePath, Astro.site)
 ---
 
 <!doctype html>
@@ -36,21 +44,32 @@ const image = new URL('/og.png', Astro.site)
 		<title>{title}</title>
 		<meta name='description' content={description} />
 		<meta name='author' content={SITE_NAME} />
-		<link rel='canonical' href={canonical} />
+		{noindex ? (
+			<meta name='robots' content='noindex' />
+		) : (
+			<link rel='canonical' href={canonical} />
+		)}
 
 		<meta property='og:site_name' content={SITE_NAME} />
+		<meta property='og:locale' content='en_US' />
 		<meta property='og:type' content={article ? 'article' : 'website'} />
 		<meta property='og:title' content={title} />
 		<meta property='og:description' content={description} />
-		<meta property='og:url' content={canonical} />
+		{!noindex && <meta property='og:url' content={canonical} />}
 		<meta property='og:image' content={image} />
 		<meta property='og:image:width' content='1200' />
 		<meta property='og:image:height' content='630' />
-		<meta property='og:image:alt' content={SITE_NAME} />
+		<meta property='og:image:alt' content={imageAlt} />
 		{article && (
 			<meta
 				property='article:published_time'
 				content={article.publishedTime.toISOString()}
+			/>
+		)}
+		{article?.modifiedTime && (
+			<meta
+				property='article:modified_time'
+				content={article.modifiedTime.toISOString()}
 			/>
 		)}
 		<meta name='twitter:card' content='summary_large_image' />

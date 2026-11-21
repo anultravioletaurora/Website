@@ -9,10 +9,13 @@ const recentPosts = (await getPosts()).slice(0, 3)
 ---
 
 <Layout
+	title={`${SITE_NAME} - Software Engineer`}
 	schema={{
 		'@type': 'Person',
 		name: SITE_NAME,
 		url: Astro.site?.href,
+		image: new URL('/avatar.webp', Astro.site).href,
+		jobTitle: 'Software Engineer',
 		description: SITE_DESCRIPTION,
 		sameAs: socialLinks.map((link) => link.href),
 	}}
