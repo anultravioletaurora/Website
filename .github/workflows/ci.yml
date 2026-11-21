@@ -46,6 +46,11 @@ jobs:
         run: |
           bunx wrangler versions upload --preview-alias "pr-${{ github.event.pull_request.number }}" | tee wrangler.log
           url=$(grep -oE 'https://pr-${{ github.event.pull_request.number }}-[^ ]+\.workers\.dev' wrangler.log | head -1)
+          # Wrangler skips the preview URL when previews are off for the Worker, so fail instead of leaving a stale link
+          if [ -z "$url" ]; then
+            echo "::error::No preview URL in the upload output. Check that preview URLs are enabled for the Worker."
+            exit 1
+          fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
       # Keeps a single comment per PR up to date instead of adding one per push
       - if: steps.upload.outputs.url != ''
