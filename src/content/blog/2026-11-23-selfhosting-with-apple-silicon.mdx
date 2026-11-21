@@ -62,14 +62,15 @@ console for managing everything remotely. The
 backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
 doesn't need the extra bandwidth.
 
-Only Cosmonautical gets the 10Gbit backbone, because of how much data its nodes move between each
-other. Jellyfin, Nextcloud, and friends read their libraries over NFS from the UNAS, SeaweedFS
-replicates every write across its three volume servers, and Patroni streams every Postgres change
-from the primary to its replicas. A gigabit link tops out around 115 MB/s, which that mix can eat up
-on its own, and when it does, everything sharing the link slows down with it. With ten times the
-headroom, a replica catching up or a library scan doesn't get in the way of someone's movie. The
-Jellify nodes mostly talk to GitHub, where my internet connection is the bottleneck long before the
-switch is, so 1Gbit through the USW-24 is plenty.
+Only the Cosmonautical datacenter (more on the datacenters in a sec) gets the 10Gbit backbone,
+because of how much data its nodes move between each other. Jellyfin, Nextcloud, and friends read
+their libraries over NFS from the UNAS, SeaweedFS replicates every write across its three volume
+servers, and Patroni streams every Postgres change from the primary to its replicas. A gigabit link
+tops out around 115 MB/s, which that mix can eat up on its own, and when it does, everything sharing
+the link slows down with it. With ten times the headroom, a replica catching up or a library scan
+doesn't get in the way of someone's movie. The Jellify nodes mostly talk to GitHub, where my
+internet connection is the bottleneck long before the switch is, so 1Gbit through the USW-24 is
+plenty.
 
 My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
@@ -91,6 +92,7 @@ enclosures, three to a 2U shelf. The Minis are split into two Nomad datacenters:
       simulators, and the [Android SDK](https://developer.android.com/studio) are all provisioned by
       Ansible, so a fresh Mac goes from unboxed to building and testing apps with a single playbook
       run.
+  - Hosts [Penpot](https://penpot.app) for Jellify's design work
   - Also home to a few x64 Linux nodes for the jobs that don't need a Mac
 
 Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
@@ -122,7 +124,7 @@ Cassiopeia.
   - 3 M4 Mac Minis (16GB RAM each)
     - The "[Jellify](https://jellify.app)" datacenter
   - x64 Linux nodes
-    - Also in the "Jellify" datacenter, for runners that don't need a Mac
+    - Also in the "Jellify" datacenter, for jobs that don't need a Mac
 - Storage
   - UNAS Pro 8
   - DIY Thunderbolt DAS
@@ -143,19 +145,31 @@ macOS is very much designed for the desktop, and even daily driving a MacBook Pr
 for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
 in front of the screen, ready to click "Allow".
 
-**[Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
-is the Achilles' heel.** Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps
-need permission to talk to devices on the local network, and that permission is granted through a
-GUI prompt. That's great on a laptop, but not on a headless server. It's tied to the binary's code
-signature, so every time [Homebrew](https://brew.sh) upgrades a service like `consul` or `php`,
-macOS treats the new binary as a stranger and wants a fresh click. As far as I can tell this can't
-be scripted either, since the permissions database is protected by
+#### [Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
+
+Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps need permission to talk to
+devices on the local network, and that permission is granted through a GUI prompt. That's great on a
+laptop, but not on a headless server. It's tied to the binary's code signature, so every time
+[Homebrew](https://brew.sh) upgrades a service like `consul` or `php`, macOS treats the new binary
+as a stranger and wants a fresh click. As far as I can tell this can't be scripted either, since the
+permissions database is protected by
 [System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty frustrating: the
 daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
 
-This hasn't been a dealbreaker for me, but it means I'm using remote desktop /
-[Guacamole](https://guacamole.apache.org) after upgrades to ensure that everything is connecting
-properly.
+#### [Removable and Network Volumes](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac)
+
+macOS gates removable and network volumes behind privacy prompts, so you get treated to gems like
+_"Nomad would like to access files on a removable volume"_ and _"Nomad would like to access files on
+a network volume"_. On a cluster whose storage lives on a Thunderbolt DAS and a NAS, that's pretty
+much everything. macOS pins the request on the process that launched the task, so it's Nomad asking
+on behalf of Jellyfin, Postgres, and everyone else. Until someone clicks "Allow", the task just sees
+a permission error.
+
+Neither has been a dealbreaker for me, since nowadays these prompts only come up after upgrades, but
+it does mean I'm using macOS
+[Screen Sharing](https://support.apple.com/guide/mac-help/share-the-screen-of-another-mac-mh14066/mac)
+or connecting through [Guacamole](https://guacamole.apache.org) when things change to ensure that
+everything is connecting properly.
 
 ### The Orchestrator: Nomad
 
@@ -306,6 +320,9 @@ The jobs I run on the rack can be broken up into tiers, based on how critical th
   - [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI)
     - A native `.app` for music sonic analysis, leveraging CoreML
   - Ollama + [Open WebUI](https://openwebui.com)
+  - Penpot
+    - Runs on the Jellify datacenter as Apple `container` tasks, with Keycloak SSO gated to
+      Jellify's GitHub teams
 - **Tier 3** • _Secondary Applications_
   - [RomM](https://github.com/rommapp/romm)
   - Guacamole
@@ -359,7 +376,7 @@ against music I own.
 
 ### Jellify Actions
 
-The Jellify datacenter exists to run GitHub Actions for Jellify. A Nomad
+The Jellify datacenter was built to run GitHub Actions for Jellify. A Nomad
 [`system` job](https://developer.hashicorp.com/nomad/docs/concepts/scheduling/schedulers) puts one
 ephemeral runner on every node tagged as a runner. Each runner takes exactly one job, wipes its work
 folder, and registers a fresh replacement, so no build ever sees the last one's leftovers.
@@ -377,7 +394,9 @@ Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hard
 #### Maestro Testing
 
 [Maestro](https://maestro.mobile.dev) end-to-end tests are the headline act, and the reason those
-runners need to be Macs in the first place: the iOS Simulator only runs on macOS.
+runners need to be Macs in the first place: the
+[iOS Simulator](https://developer.apple.com/documentation/xcode/running-your-app-in-simulator-or-on-a-device)
+only runs on macOS.
 
 Every PR, plus a nightly run, builds a release copy of the app and drives it through the full UI
 flow on _both_ an iOS Simulator and an
@@ -394,8 +413,8 @@ it ships, not from a bug report.
 
 #### Release Notes
 
-The Jellify datacenter is mostly walled off from Cosmonautical. There's one exception, though:
-release notes.
+The Jellify runners are mostly walled off from Cosmonautical. There's one exception, though: release
+notes.
 
 Every Jellify release, both store builds and over-the-air updates, gets its notes written by an LLM
 running on the cluster. The pipeline is a
@@ -427,6 +446,24 @@ with a few steps:
 So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
 writing a word, all powered by a Mac Mini in my rack.
 
+### Designing in Penpot
+
+The newest job on the rack is [Penpot](https://penpot.app), an open source design and prototyping
+tool. Jellify's designs used to live in [Figma](https://www.figma.com), but we wanted a more free
+and open alternative and Penpot is the one we landed on Unlike the rest of my Tier 2 apps, it runs
+on the Jellify datacenter: the frontend, backend, and exporter each run as an Apple `container` task
+on the Jellify Macs.
+
+It doesn't bring any backing services of its own, though. Consul spans both datacenters, so Penpot
+finds the same Postgres and Redis clusters as every Cosmonautical job, and keeps its assets on an
+NFS share. Logins go through Keycloak, and only members of Jellify's design, engineering, and triage
+teams on GitHub get in. A Nomad batch job syncs those teams into a Keycloak group every 15 minutes,
+so adding someone to a GitHub team is all it takes to give them access.
+
+It also got me reacquainted with the Network Volumes prompt from earlier. Each Mac quietly waited
+for someone to click "Allow" before Penpot's containers could start, and I had deployed Penpot when
+I wasn't there to click it.
+
 ## Standard Operating Procedures
 
 With vulnerabilities landing faster than ever, I've had plenty of practice running through patching
@@ -450,8 +487,9 @@ using the old one, so the playbook also handles the restarts:
   binary that Homebrew has since deleted. Don't ask me how I know this (my Postgres replicas once
   ended up ~23 GB behind for days without me knowing lol).
 
-The one step that can't be automated is the Local Network prompt. After an upgrade, I hop onto each
-Mac via Guacamole and click "Allow" for the freshly signed binaries.
+The one step that can't be automated is the privacy prompts. After an upgrade, I hop onto each Mac
+via Guacamole and click "Allow" on the Local Network and file access prompts for the freshly signed
+binaries.
 
 ### Nomad Life
 
@@ -494,6 +532,57 @@ You need to go in with your eyes open. They aren't cheap, and macOS will fight y
 way. No matter how much you automate, be prepared to remote into the desktop every now and again to
 click through whatever prompt it's decided to throw at you this time.
 
+## What's Next?
+
+I truly believe a homelab is never really finished. As such, I've already got a couple of ideas
+lined up for the rack ;)
+
+### Downloading More RAM
+
+The biggest limit on what I can run locally is memory. Each Cosmonautical Mini has 24GB of unified
+memory, and that has to cover the model, its context, and everything else the node is running. That
+rules out a lot of the bigger open models.
+
+Apple recently added [RDMA](https://en.wikipedia.org/wiki/Remote_direct_memory_access) over
+Thunderbolt 5 to macOS, which lets one Mac read and write another Mac's memory directly, without
+going through the network stack. Taurus and Orion both have Thunderbolt 5 ports, so I'm planning to
+cable them together and split a single model across both of them.
+
+Ollama can't do that part, since it only runs a model on one machine. Apple's
+[MLX](https://github.com/ml-explore/mlx) can, though. Its
+[distributed mode](https://ml-explore.github.io/mlx/build/html/usage/distributed.html) is built to
+use RDMA over Thunderbolt, and [`mlx-lm`](https://github.com/ml-explore/mlx-lm) can shard a model
+across both Minis and serve it over an OpenAI-compatible API. That means Open WebUI and the release
+notes pipeline can talk to it the same way they talk to Ollama today. Ollama can stick around for
+the smaller models, and MLX gets the big one that needs both machines.
+
+### HomeKitschy
+
+My smart home already runs on [Home Assistant OS](https://www.home-assistant.io/installation/), on
+(you guessed it) a Mac Mini. This one's a
+[2012 Intel model](https://en.wikipedia.org/wiki/Mac_mini#Third_generation_%28Unibody%29) with a
+[Nortek GoControl HUSBZB-1 QuickStick Combo](https://zigbee.blakadder.com/Nortek_HUSBZB-1.html)
+Zigbee + Z-Wave USB stick plugged into it. Home Assistant's
+[HomeKit Bridge](https://www.home-assistant.io/integrations/homekit/) integration exposes its
+entities to HomeKit, and an [Apple TV 4K](https://www.apple.com/apple-tv-4k/) acts as the
+[home hub](https://support.apple.com/en-us/102557), so everything shows up in the
+[Home app](https://www.apple.com/home-app/) and works with Siri, no matter what brand it is.
+
+Next up, I want to expand the setup with [Node-RED](https://nodered.org), [MQTT](https://mqtt.org),
+and [Zigbee2MQTT](https://www.zigbee2mqtt.io). Rather than piling more add-ons onto the old Mini,
+I'm going to deploy them as Nomad jobs, so they're coordinated and managed like everything else on
+the rack.
+
+Once that's in place, the rack itself can join the house. The UPS's power draw (via
+[Network UPS Tools](https://www.home-assistant.io/integrations/nut/)) and each node's stats can go
+into Home Assistant, onto a [Lovelace dashboard](https://www.home-assistant.io/dashboards/), and
+through the HomeKit Bridge into the Home app, with an alert on my phone when something goes down.
+Then "Hey Siri, how's the cluster?" would get an actual answer, and Home automations could react to
+the rack the same way they react to everything else in the house.
+
+I've also ordered an [Apple HomeView](https://www.apple.com/apple-homeview/) for the purpose of
+seeing how it reacts to Jellify, but it should pair nicely with these Home Assistant plans.
+
 ## A Few Thank Yous
 
 A lot of people made this setup possible and inspired me to build it, and they deserve a salute.
@@ -517,8 +606,8 @@ people who owe me nothing. Thank you to the maintainers of:
 The apps are the reason the cluster exists at all. Thank you to the open source contributors behind
 [Nextcloud](https://nextcloud.com), [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr),
 [Ollama](https://ollama.com), [Open WebUI](https://openwebui.com),
-[RomM](https://github.com/rommapp/romm), [Guacamole](https://guacamole.apache.org), and
-[Seerr](https://github.com/seerr-team/seerr).
+[RomM](https://github.com/rommapp/romm), [Guacamole](https://guacamole.apache.org),
+[Seerr](https://github.com/seerr-team/seerr), and [Penpot](https://penpot.app).
 
 And to the people behind the services those apps lean on, quietly doing their jobs underneath:
 [PostgreSQL](https://www.postgresql.org) and [Patroni](https://github.com/patroni/patroni),
