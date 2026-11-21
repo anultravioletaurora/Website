@@ -448,9 +448,25 @@ opens a PR against my Terraform whenever a new release of an app ships. Once I m
 Semaphore runs `terraform plan` and then holds the change for my approval before `terraform apply`
 rolls it out to the cluster. GitOps FTW.
 
+### System Updates
+
+This is where we reach another one of macOS's weak points: system updates will invariably require a
+restart. There's no live patching and no swapping out the kernel while the host keeps serving, so
+every macOS update means taking a node down for 5-15 minutes while it installs and reboots.
+
+The tiering takes most of the sting out of this. Everything in Tier 1 is either highly available or
+able to fail over, so Postgres hands off to a replica, Consul and Nomad hold quorum on the remaining
+servers, and Nomad reschedules what it can onto the other Macs. I just do one node at a time and
+wait for it to rejoin before moving on to the next. Security updates are set to install
+automatically, so at least the most urgent patches aren't waiting on me.
+
+Still, it's a pain. Every update is a planned outage for whatever can't move, and a reason to
+babysit the rack. Apple, if you're reading this: I'd love to be able to run these system updates
+without a full reboot.
+
 ## The Power to Be Your Best
 
-So, how did my curiosity about performance per watt pan out? Pretty well, actually.
+How did my planning around performance per watt pan out? Pretty well, actually.
 
 Before the Macs, my three-node Harvester cluster (each node with a Ryzen 7 5700G and an RTX 4060)
 idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw some real load at
@@ -480,8 +496,8 @@ quiet, sip power, and can really crunch data. Running them as a cluster, as you 
 possible.
 
 They aren't cheap, and macOS is prepared to fight you every step of the way. No matter how much you
-automate, be prepared to remote into the desktop every now and again to click through whatever
-prompt it's decided to throw at you this time.
+automate, be prepared for reboots, and to remote into the desktop every now and again to click
+through whatever prompt it's decided to throw at you this time.
 
 ## What's Next?
 
@@ -504,13 +520,12 @@ Ollama can't do that part, since it only runs a model on one machine. Apple's
 [distributed mode](https://ml-explore.github.io/mlx/build/html/usage/distributed.html) is built to
 use RDMA over Thunderbolt, and [`mlx-lm`](https://github.com/ml-explore/mlx-lm) can shard a model
 across both Minis and serve it over an OpenAI-compatible API. That means Open WebUI and the release
-notes pipeline can talk to it the same way they talk to Ollama today. Ollama can stick around for
-the smaller models, and MLX gets the big one that needs both machines.
+notes pipeline can talk to it the same way they talk to Ollama today.
 
 ### HomeKitschy
 
-My smart home already runs on [Home Assistant OS](https://www.home-assistant.io/installation/), on
-(you guessed it) a Mac Mini. This one's a
+My smart home already runs on [Home Assistant OS](https://www.home-assistant.io/installation/), on a
+(you guessed it) Mac Mini. This one's a
 [2012 Intel model](https://en.wikipedia.org/wiki/Mac_mini#Third_generation_%28Unibody%29) with a
 [Nortek GoControl HUSBZB-1 QuickStick Combo](https://zigbee.blakadder.com/Nortek_HUSBZB-1.html)
 Zigbee + Z-Wave USB stick plugged into it. Home Assistant's
@@ -540,8 +555,7 @@ A lot of people made this setup possible and inspired me to build it, and they d
 
 ### The Maintainers
 
-Every piece of this setup stands on someone else's work, and most of it is maintained in the open by
-people who owe me nothing. Thank you to the maintainers of:
+This project really does stand on the shoulders of giants. Thank you to the maintainers of:
 
 - [Homebrew](https://brew.sh), which installs and upgrades just about everything on the Macs
 - [Nomad](https://www.nomadproject.io), [Consul](https://www.consul.io), and
