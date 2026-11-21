@@ -26,6 +26,27 @@ import Layout from '../layouts/Layout.astro'
 		font-size: 6rem;
 		font-weight: 800;
 		line-height: 1;
+		transform-origin: top center;
+		animation: swing 1s ease-in-out 300ms both;
+	}
+
+	/* Adapted from animate.css (https://animate.style, MIT) */
+	@keyframes swing {
+		20% {
+			transform: rotate(15deg);
+		}
+		40% {
+			transform: rotate(-10deg);
+		}
+		60% {
+			transform: rotate(5deg);
+		}
+		80% {
+			transform: rotate(-5deg);
+		}
+		to {
+			transform: rotate(0deg);
+		}
 	}
 
 	h1 {
