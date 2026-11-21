@@ -7,10 +7,11 @@ description: Self-hosting on a six-node Mac Mini cluster with Nomad, Consul, and
 import { Image } from 'astro:assets'
 import rackPhoto from '../../assets/blog/iselfhost-rack.jpg'
 import Sponsor from '@/components/Sponsor.astro'
-import ClusterMap from '@/components/ClusterMap.astro'
-import ContainerRuntimes from '@/components/ContainerRuntimes.astro'
-import PowerChart from '@/components/PowerChart.astro'
-import ReleaseNotesPipeline from '@/components/ReleaseNotesPipeline.astro'
+import ClusterMap from '@/components/iselfhost/ClusterMap.astro'
+import ContainerRuntimes from '@/components/iselfhost/ContainerRuntimes.astro'
+import PowerChart from '@/components/iselfhost/PowerChart.astro'
+import ReleaseNotesPipeline from '@/components/iselfhost/ReleaseNotesPipeline.astro'
+import AppTiers from '@/components/iselfhost/AppTiers.astro'
 
 <figure>
   <Image
@@ -291,43 +292,7 @@ never dissolved.
 
 The jobs I run on the rack can be broken up into tiers, based on how critical they are.
 
-- **Tier 1** • _Core Infrastructure_
-  - [Postgres](https://www.postgresql.org) (Patroni, using Consul as its DCS)
-    - A separate Nomad job takes a
-      [`pg_dumpall`](https://www.postgresql.org/docs/current/app-pg-dumpall.html) every 6 hours
-  - [Redis](https://redis.io) +
-    [Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)
-  - [SeaweedFS](https://github.com/seaweedfs/seaweedfs) (3 masters, 3 volume servers, a filer, NFS
-    backup)
-  - [Traefik](https://traefik.io) + [Fail2ban](https://github.com/fail2ban/fail2ban)
-  - [OpenLDAP](https://www.openldap.org) + [Keycloak](https://www.keycloak.org)
-  - Semaphore
-    - Runs the Ansible and Terraform that deploy everything else, including itself
-- **Tier 2** • _Mission Critical Applications_
-  - [Nextcloud](https://nextcloud.com)
-    - Primary app is deployed as a Nomad service
-    - Nomad batch jobs are deployed for Nextcloud tasks to run on schedule
-      - Nextcloud's cron
-      - preview generation
-      - NFS share scans
-      - S3 backups to [Backblaze](https://www.backblaze.com/cloud-storage)
-  - Jellyfin
-    - A native `.app` that uses Apple's
-      [VideoToolbox](https://developer.apple.com/documentation/videotoolbox) for
-      [hardware accelerated transcoding](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/)
-    - [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) acts as an
-      [HDHomeRun](https://www.silicondust.com) tuner for Live TV
-  - [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI)
-    - A native `.app` for music sonic analysis, leveraging CoreML
-  - Ollama + [Open WebUI](https://openwebui.com)
-  - Penpot
-    - Runs on the Jellify datacenter as Apple `container` tasks, with Keycloak SSO gated to
-      Jellify's GitHub teams
-- **Tier 3** • _Secondary Applications_
-  - [RomM](https://github.com/rommapp/romm)
-  - Guacamole
-  - [Seerr](https://github.com/seerr-team/seerr) for media requests
-  - GitHub Actions runners for Jellify (more on those below)
+<AppTiers />
 
 Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm,
 AudioMuse), while others are Linux containers through Apple `container` via my
