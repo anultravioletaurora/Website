@@ -80,10 +80,11 @@ export const sponsorLinks: Link[] = [
 	},
 ]
 
+// Points at the contact form rather than a mailto link
 export const emailLink = {
 	label: 'Email',
 	icon: mdiEmailOutline,
-	href: `mailto:${EMAIL}`,
+	href: '/contact',
 	description: EMAIL,
 } satisfies Link
 

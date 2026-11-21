@@ -1,7 +1,7 @@
 ---
 import { mdiArrowRight } from '@mdi/js'
 import Icon from '@/components/Icon.astro'
-import { EMAIL, emailLink, SITE_NAME, socialLinks } from '@/config'
+import { emailLink, SITE_NAME, socialLinks } from '@/config'
 import Layout from '../layouts/Layout.astro'
 ---
 
@@ -13,22 +13,50 @@ import Layout from '../layouts/Layout.astro'
 		<header>
 			<h1>Get in touch</h1>
 			<p class='lede'>
-				Want to talk about a project, a job, or Jellify? Email is the best way
-				to reach me.
+				Wanna talk? Send me a message and it'll go to my inbox.
 			</p>
 		</header>
 
 		<section class='email' aria-labelledby='email-heading'>
 			<Icon path={emailLink.icon} />
-			<h2 id='email-heading'>Send me an email</h2>
-			<p>I read everything, and usually reply within a few days.</p>
-			<a class='button' href={emailLink.href}>
-				Email me
-				<Icon path={mdiArrowRight} />
-			</a>
-			<p class='address'>
-				<code>{EMAIL}</code>
-			</p>
+			<h2 id='email-heading'>Send me a message</h2>
+			<p>I read everything and usually reply within a few days.</p>
+
+			<form method='post' action='/api/contact'>
+				<label>
+					Name
+					<input name='name' autocomplete='name' maxlength='100' required />
+				</label>
+				<label>
+					Email
+					<input
+						name='email'
+						type='email'
+						autocomplete='email'
+						maxlength='254'
+						required
+					/>
+				</label>
+				<label>
+					Message
+					<textarea
+						name='message'
+						rows='6'
+						maxlength='5000'
+						required
+					></textarea>
+				</label>
+				<!-- Hidden from people, so anything typed here came from a bot -->
+				<label class='trap' aria-hidden='true'>
+					Website
+					<input name='website' tabindex='-1' autocomplete='off' />
+				</label>
+				<button class='button' type='submit'>
+					Send
+					<Icon path={mdiArrowRight} />
+				</button>
+				<p class='status' role='status'></p>
+			</form>
 		</section>
 
 		<section class='elsewhere' aria-labelledby='elsewhere-heading'>
@@ -49,6 +77,48 @@ import Layout from '../layouts/Layout.astro'
 		</section>
 	</main>
 </Layout>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>('.email form')!
+	const status = form.querySelector<HTMLElement>('.status')!
+	const button = form.querySelector<HTMLButtonElement>('button')!
+	const SENT = 'Thanks! Your message is on its way.'
+	const FAILED = `Your message couldn't be sent. Please try again, or email me directly.`
+
+	function show(message: string, ok: boolean) {
+		status.textContent = message
+		status.classList.toggle('error', !ok)
+	}
+
+	// Without JavaScript the form posts normally and the Worker redirects back here with the result
+	const result = new URLSearchParams(location.search).get('status')
+	if (result === 'sent') show(SENT, true)
+	if (result === 'error') show(FAILED, false)
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault()
+		button.disabled = true
+		show('Sending…', true)
+		try {
+			const response = await fetch(form.action, {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+				body: new FormData(form),
+			})
+			const body: { ok: boolean; error?: string } = await response.json()
+			if (!body.ok) throw new Error(body.error)
+			form.reset()
+			show(SENT, true)
+		} catch (error) {
+			show(
+				error instanceof Error && error.message ? error.message : FAILED,
+				false,
+			)
+		} finally {
+			button.disabled = false
+		}
+	})
+</script>
 
 <style>
 	main {
@@ -117,8 +187,78 @@ import Layout from '../layouts/Layout.astro'
 		box-shadow: 0 8px 24px -8px var(--primary);
 	}
 
+	form {
+		display: grid;
+		gap: 1rem;
+		max-width: 32rem;
+		margin: 1.5rem auto 0;
+		text-align: left;
+	}
+
+	label {
+		display: grid;
+		gap: 0.375rem;
+		font-weight: 700;
+	}
+
+	input,
+	textarea {
+		width: 100%;
+		padding: 0.625rem 0.75rem;
+		border: 2px solid var(--border-color);
+		border-radius: 7px;
+		background-color: var(--background);
+		color: var(--color);
+		font: inherit;
+		font-weight: 400;
+	}
+
+	textarea {
+		resize: vertical;
+	}
+
+	input:focus-visible,
+	textarea:focus-visible {
+		outline: none;
+		border-color: var(--primary);
+	}
+
+	.trap {
+		position: absolute;
+		left: -9999px;
+	}
+
+	form .button {
+		justify-self: center;
+		margin-top: 0.5rem;
+		border: none;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	form .button:disabled {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	.email .status {
+		margin: 0;
+		text-align: center;
+		color: var(--primary);
+	}
+
+	.email .status:empty {
+		display: none;
+	}
+
+	.email .status.error {
+		color: var(--accent);
+	}
+
 	.email .address {
-		margin-top: 1rem;
+		margin-top: 1.5rem;
+		font-size: 0.9375rem;
 	}
 
 	code {
