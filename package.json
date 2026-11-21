@@ -8,7 +8,7 @@
 		"build": "astro build",
 		"preview": "bun run build && wrangler dev",
 		"lint": "eslint .",
-		"typecheck": "astro check",
+		"typecheck": "astro check && tsc -p worker",
 		"og-image": "bun scripts/og-image.mjs",
 		"deploy:version": "bun run build && wrangler versions upload",
 		"deploy": "bun run build && wrangler deploy"
@@ -22,6 +22,7 @@
 	},
 	"devDependencies": {
 		"@astrojs/check": "0.9.12",
+		"@cloudflare/workers-types": "5.20261120.1",
 		"@eslint/js": "9.39.5",
 		"@types/node": "26.6.6",
 		"eslint": "9.39.5",

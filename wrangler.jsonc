@@ -5,6 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "violetcaulfield-website",
+	"main": "./worker/index.ts",
 	"compatibility_date": "2026-10-01",
 	"observability": {
 		"enabled": true
@@ -15,11 +16,20 @@
 	 */
 	"routes": [{ "pattern": "violetcaulfield.com", "custom_domain": true }],
 	/**
-	 * The site is fully static, so the Worker only serves the build output
+	 * The site is static, so the Worker only runs for the contact form's endpoint and everything else is served
+	 * straight from the build output
 	 * https://developers.cloudflare.com/workers/static-assets/
 	 */
 	"assets": {
 		"directory": "./dist",
-		"not_found_handling": "404-page"
-	}
+		"binding": "ASSETS",
+		"not_found_handling": "404-page",
+		"run_worker_first": ["/api/*"]
+	},
+	/**
+	 * Sends contact form messages. The recipient is the CONTACT_TO secret, which has to be a verified
+	 * Email Routing destination address
+	 * https://developers.cloudflare.com/email-routing/email-workers/send-email-workers/
+	 */
+	"send_email": [{ "name": "CONTACT_EMAIL" }]
 }
