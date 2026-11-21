@@ -3,15 +3,16 @@ import { navLinks, socialLinks } from '@/config'
 import Icon from './Icon.astro'
 
 // GitHub and LinkedIn stay one tap away in the header; the rest live in the footer and on /contact
-const quickLinks = socialLinks.filter((link) =>
-	['GitHub', 'LinkedIn'].includes(link.label),
-)
+const quickLinks = socialLinks.filter((link) => ['GitHub', 'LinkedIn'].includes(link.label))
+
+// The home page's large photo claims the avatar's view transition name, and a name can only be used once per page
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '/index.html'
 ---
 
 <header>
 	<nav aria-label='Main'>
 		<a class='brand' href='/'>
-			<img class='avatar' src='/avatar.webp' alt='' width='36' height='36' />
+			<img class:list={['avatar', { transition: !isHome }]} src='/avatar.webp' alt='' width='36' height='36' />
 			<span>Violet Caulfield</span>
 		</a>
 
@@ -85,6 +86,10 @@ const quickLinks = socialLinks.filter((link) =>
 		border-radius: 50%;
 		object-fit: cover;
 		background: var(--gradient);
+	}
+
+	.avatar.transition {
+		view-transition-name: avatar;
 	}
 
 	ul {

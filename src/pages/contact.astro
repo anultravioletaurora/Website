@@ -88,6 +88,10 @@ import Layout from '../layouts/Layout.astro'
 	function show(message: string, ok: boolean) {
 		status.textContent = message
 		status.classList.toggle('error', !ok)
+		// Restarts the animation so a repeated message still fades in or shakes
+		status.style.animation = 'none'
+		void status.offsetWidth
+		status.style.animation = ''
 	}
 
 	// Without JavaScript the form posts normally and the Worker redirects back here with the result
@@ -242,17 +246,26 @@ import Layout from '../layouts/Layout.astro'
 	}
 
 	.email .status {
-		margin: 0;
+		margin: 0 auto;
 		text-align: center;
 		color: var(--primary);
+		animation: fade-in 200ms ease-out;
 	}
 
 	.email .status:empty {
 		display: none;
 	}
 
+	/* "Sending…" gently fades in and out until the request finishes */
+	form:has(.button:disabled) .status {
+		animation:
+			fade-in 200ms ease-out,
+			breathe 1.2s ease-in-out 200ms infinite;
+	}
+
 	.email .status.error {
 		color: var(--accent);
+		animation: shake 500ms ease-in-out;
 	}
 
 	.email .address {
