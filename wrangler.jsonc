@@ -16,6 +16,12 @@
 	 */
 	"routes": [{ "pattern": "violetcaulfield.com", "custom_domain": true }],
 	/**
+	 * Custom domain routes turn workers.dev and preview URLs off by default, and every production deploy syncs that
+	 * setting, so keep previews on for PR builds
+	 * https://developers.cloudflare.com/workers/configuration/previews/
+	 */
+	"preview_urls": true,
+	/**
 	 * The site is static, so the Worker only runs for the contact form's endpoint and everything else is served
 	 * straight from the build output
 	 * https://developers.cloudflare.com/workers/static-assets/
