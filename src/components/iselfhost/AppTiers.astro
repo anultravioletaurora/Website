@@ -1,12 +1,18 @@
 ---
 // Jobs on the rack, stacked by how critical they are. Tier 1 sits at the bottom since everything leans on it
-const tiers = [
+interface App {
+	name: string
+	url: string
+	note?: string
+}
+
+const tiers: { level: number; name: string; apps: App[] }[] = [
 	{
 		level: 3,
 		name: 'Secondary Applications',
 		apps: [
 			{ name: 'RomM', url: 'https://github.com/rommapp/romm' },
-			{ name: 'Guacamole' },
+			{ name: 'Guacamole', url: 'https://guacamole.apache.org' },
 			{
 				name: 'Seerr',
 				url: 'https://github.com/seerr-team/seerr',
@@ -14,6 +20,7 @@ const tiers = [
 			},
 			{
 				name: 'GitHub Actions runners',
+				url: 'https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners',
 				note: 'For Jellify, more on those below',
 			},
 		],
@@ -29,6 +36,7 @@ const tiers = [
 			},
 			{
 				name: 'Jellyfin',
+				url: 'https://jellyfin.org',
 				note: 'Native .app, VideoToolbox transcoding. Dispatcharr tunes Live TV',
 			},
 			{
@@ -36,9 +44,10 @@ const tiers = [
 				url: 'https://github.com/NeptuneHub/AudioMuse-AI',
 				note: 'Native .app, sonic analysis on CoreML',
 			},
-			{ name: 'Ollama + Open WebUI' },
+			{ name: 'Ollama + Open WebUI', url: 'https://ollama.com' },
 			{
 				name: 'Penpot',
+				url: 'https://penpot.app',
 				note: 'Apple container on the Jellify datacenter, SSO gated to GitHub teams',
 			},
 		],
@@ -62,6 +71,7 @@ const tiers = [
 			{ name: 'OpenLDAP + Keycloak', url: 'https://www.keycloak.org' },
 			{
 				name: 'Semaphore',
+				url: 'https://semaphoreui.com',
 				note: 'Runs the Ansible and Terraform that deploy everything, itself included',
 			},
 		],
@@ -79,11 +89,7 @@ const tiers = [
 			<ul class='apps'>
 				{tier.apps.map((app) => (
 					<li>
-						{app.url ? (
-							<a href={app.url}>{app.name}</a>
-						) : (
-							<span class='app'>{app.name}</span>
-						)}
+						<a href={app.url}>{app.name}</a>
 						{app.note && <span class='note'>{app.note}</span>}
 					</li>
 				))}
@@ -176,8 +182,7 @@ const tiers = [
 		border-color: var(--border-color);
 	}
 
-	.apps a,
-	.app {
+	.apps a {
 		font-size: 0.875rem;
 		font-weight: 600;
 	}

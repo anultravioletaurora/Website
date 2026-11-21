@@ -1,25 +1,22 @@
 ---
-// Network and node layout of the rack, grouped by Nomad datacenter
+// Network layout of the rack, grouped by Nomad datacenter. Node specs live in RackEnclosures
 const datacenters = [
 	{
 		name: 'Cosmonautical',
-		role: 'Nomad + Consul servers and clients',
 		switchName: 'USW Aggregation',
 		speed: '10 Gbit',
 		fast: true,
-		nodes: ['orion', 'taurus', 'cassiopeia*'],
-		hardware: 'M4 Pro, 24GB',
-		extra: '*Thunderbolt DAS (10 HDDs) on cassiopeia',
+		nodes: ['orion', 'taurus', 'cassiopeia'],
+		traffic: 'NFS reads, SeaweedFS replication, Patroni streaming',
 	},
 	{
 		name: 'Jellify',
-		role: 'Nomad clients, GitHub Actions runners',
 		switchName: 'USW-24',
 		speed: '1 Gbit',
 		fast: false,
 		nodes: ['galileo', 'hopper', 'lovelace'],
-		hardware: 'M4, 16GB',
 		extra: '+ x64 Linux nodes',
+		traffic: 'Mostly GitHub, so the internet uplink is the bottleneck',
 	},
 ]
 ---
@@ -37,14 +34,13 @@ const datacenters = [
 					<span class='speed'>{dc.speed}</span>
 				</div>
 				<p class='name'>{dc.name}</p>
-				<p class='role'>{dc.role}</p>
 				<ul class='nodes'>
 					{dc.nodes.map((node) => (
 						<li>{node}</li>
 					))}
+					{dc.extra && <li class='extra'>{dc.extra}</li>}
 				</ul>
-				<p class='hardware'>{dc.hardware}</p>
-				<p class='extra'>{dc.extra}</p>
+				<p class='traffic'>{dc.traffic}</p>
 			</div>
 		))}
 	</div>
@@ -169,14 +165,6 @@ const datacenters = [
 		font-weight: 700;
 	}
 
-	.role,
-	.hardware,
-	.extra {
-		margin: 0.125rem 0 0;
-		font-size: 0.75rem;
-		color: var(--neutral);
-	}
-
 	.nodes {
 		display: flex;
 		flex-direction: column;
@@ -195,12 +183,17 @@ const datacenters = [
 		font-size: 0.8125rem;
 	}
 
-	.hardware {
-		margin-top: 0.375rem;
+	.nodes .extra {
+		border: 1px dashed var(--border-color);
+		font-family: inherit;
+		font-size: 0.75rem;
+		font-style: italic;
+		color: var(--neutral);
 	}
 
-	.extra {
-		margin-top: 0.5rem;
-		font-style: italic;
+	.traffic {
+		margin: 0.5rem 0 0;
+		font-size: 0.75rem;
+		color: var(--neutral);
 	}
 </style>

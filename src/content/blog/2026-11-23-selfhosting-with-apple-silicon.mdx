@@ -7,6 +7,7 @@ description: Self-hosting on a six-node Mac Mini cluster with Nomad, Consul, and
 import { Image } from 'astro:assets'
 import rackPhoto from '../../assets/blog/iselfhost-rack.jpg'
 import Sponsor from '@/components/Sponsor.astro'
+import RackEnclosures from '@/components/iselfhost/RackEnclosures.astro'
 import ClusterMap from '@/components/iselfhost/ClusterMap.astro'
 import ContainerRuntimes from '@/components/iselfhost/ContainerRuntimes.astro'
 import PowerChart from '@/components/iselfhost/PowerChart.astro'
@@ -80,21 +81,20 @@ company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
 ### The Compute
 
 Six Mac Minis live in two Sonnet [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
-enclosures, three to a 2U shelf. The Minis are split into two Nomad datacenters:
+enclosures, three to a 2U shelf, and each shelf is its own Nomad datacenter.
 
-- **Cosmonautical** • _the core cluster_
-  - Runs Nomad and Consul as server-client combos
-  - Hosts everything I self-host, from Postgres to Jellyfin
-- **Jellify** • _client-only_
-  - Runs
-    [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
-    for Jellify
-    - [Xcode](https://developer.apple.com/xcode/), [Maestro](https://maestro.mobile.dev),
-      simulators, and the [Android SDK](https://developer.android.com/studio) are all provisioned by
-      Ansible, so a fresh Mac goes from unboxed to building and testing apps with a single playbook
-      run.
-  - Hosts [Penpot](https://penpot.app) for Jellify's design work
-  - Also home to a few x64 Linux nodes for the jobs that don't need a Mac
+<RackEnclosures />
+
+The top shelf, **Cosmonautical**, is the core cluster. Its three M4 Pros run Nomad and Consul as
+server-client combos and host everything I self-host, from Postgres to Jellyfin.
+
+The bottom shelf, **Jellify**, is client-only. It runs
+[GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
+for Jellify and hosts [Penpot](https://penpot.app) for Jellify's design work. A few x64 Linux nodes
+join it for the jobs that don't need a Mac. [Xcode](https://developer.apple.com/xcode/),
+[Maestro](https://maestro.mobile.dev), simulators, and the
+[Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh Mac
+goes from unboxed to building and testing apps with a single playbook run.
 
 Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
 [Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
@@ -107,6 +107,10 @@ Bulk SSD storage lives on a [UNAS Pro 8](https://store.ui.com/us/en/products/una
 serves [NFS](https://en.wikipedia.org/wiki/Network_File_System) shares (music, books, ROMs and so
 on) to the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly to
 Cassiopeia.
+
+### Altogether Now
+
+Here's how it all fits together, from the router down to the disks:
 
 <ClusterMap />
 
@@ -126,25 +130,26 @@ macOS is very much designed for the desktop, and even daily driving a MacBook Pr
 for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
 in front of the screen, ready to click "Allow".
 
-#### [Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
+#### Local Network Privacy
 
-Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps need permission to talk to
-devices on the local network, and that permission is granted through a GUI prompt. That's great on a
-laptop, but not on a headless server. It's tied to the binary's code signature, so every time
-[Homebrew](https://brew.sh) upgrades a service like `consul` or `php`, macOS treats the new binary
-as a stranger and wants a fresh click. As far as I can tell this can't be scripted either, since the
-permissions database is protected by
+Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps need
+[permission to talk to devices on the local network](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy),
+and that permission is granted through a GUI prompt. That's great on a laptop, but not on a headless
+server. It's tied to the binary's code signature, so every time [Homebrew](https://brew.sh) upgrades
+a service like `consul` or `php`, macOS treats the new binary as a stranger and wants a fresh click.
+As far as I can tell this can't be scripted either, since the permissions database is protected by
 [System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty frustrating: the
 daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
 
-#### [Removable and Network Volumes](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac)
+#### Removable and Network Volumes
 
-macOS gates removable and network volumes behind privacy prompts, so you get treated to gems like
-_"Nomad would like to access files on a removable volume"_ and _"Nomad would like to access files on
-a network volume"_. On a cluster whose storage lives on a Thunderbolt DAS and a NAS, that's pretty
-much everything. macOS pins the request on the process that launched the task, so it's Nomad asking
-on behalf of Jellyfin, Postgres, and everyone else. Until someone clicks "Allow", the task just sees
-a permission error.
+macOS gates removable and network volumes behind
+[privacy prompts](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac),
+so you get treated to gems like _"Nomad would like to access files on a removable volume"_ and
+_"Nomad would like to access files on a network volume"_. On a cluster whose storage lives on a
+Thunderbolt DAS and a NAS, that's pretty much everything. macOS pins the request on the process that
+launched the task, so it's Nomad asking on behalf of Jellyfin, Postgres, and everyone else. Until
+someone clicks "Allow", the task just sees a permission error.
 
 Neither has been a dealbreaker for me, since nowadays these prompts only come up after upgrades, but
 it does mean I'm using macOS
@@ -395,7 +400,7 @@ writing a word, all powered by a Mac Mini in my rack.
 
 The newest job on the rack is [Penpot](https://penpot.app), an open source design and prototyping
 tool. Jellify's designs used to live in [Figma](https://www.figma.com), but we wanted a more free
-and open alternative and Penpot is the one we landed on Unlike the rest of my Tier 2 apps, it runs
+and open alternative and Penpot is the one we landed on. Unlike the rest of my Tier 2 apps, it runs
 on the Jellify datacenter: the frontend, backend, and exporter each run as an Apple `container` task
 on the Jellify Macs.
 
