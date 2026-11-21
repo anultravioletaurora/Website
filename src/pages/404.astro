@@ -6,8 +6,9 @@ import Layout from '../layouts/Layout.astro'
 <Layout title={`Page not found - ${SITE_NAME}`} noindex>
 	<main>
 		<p class='code gradient-text'>404</p>
-		<h1>Page not found</h1>
-		<a href='/'>Back home</a>
+		<h1>Whoa! </h1>
+		<h2>There ain't nothing here!</h2>
+		<a href='/'>← Back home</a>
 	</main>
 </Layout>
 
@@ -26,10 +27,51 @@ import Layout from '../layouts/Layout.astro'
 		font-size: 6rem;
 		font-weight: 800;
 		line-height: 1;
+		transform-origin: top center;
+		/* Falls in, then swings from the jolt of landing. They animate translate and rotate separately so both apply at once */
+		animation:
+			drop 600ms cubic-bezier(0.55, 0, 1, 0.45) 200ms both,
+			swing 3s ease-in-out 700ms both;
 	}
 
-	h1 {
-		font-size: 1.5rem;
+	/* Speeds up as it falls, like it's dropped from behind the header */
+	@keyframes drop {
+		from {
+			translate: 0 -7.5rem;
+			opacity: 0;
+		}
+		40% {
+			opacity: 1;
+		}
+	}
+
+	/* Adapted from animate.css's swing (https://animate.style, MIT), slowed down and damped gradually so it feels heavy.
+	 * Each swing takes the same time, like a pendulum, and loses about a third of its reach */
+	@keyframes swing {
+		10% {
+			rotate: 25deg;
+		}
+		23% {
+			rotate: -18deg;
+		}
+		36% {
+			rotate: 12deg;
+		}
+		49% {
+			rotate: -8deg;
+		}
+		62% {
+			rotate: 5deg;
+		}
+		75% {
+			rotate: -3deg;
+		}
+		88% {
+			rotate: 1.5deg;
+		}
+		to {
+			rotate: 0deg;
+		}
 	}
 
 	a {
