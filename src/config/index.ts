@@ -1,5 +1,16 @@
 import type { Link } from '../types'
-import { mdiEmailOutline, mdiGithub, mdiLinkedin, mdiMastodon, mdiPost, mdiJellyfish, mdiReddit, mdiRss, mdiButterflyOutline } from '@mdi/js'
+import {
+	mdiEmailOutline,
+	mdiGithub,
+	mdiLinkedin,
+	mdiMastodon,
+	mdiPost,
+	mdiJellyfish,
+	mdiReddit,
+	mdiRss,
+	mdiButterflyOutline,
+	mdiPatreon,
+} from '@mdi/js'
 
 export const SITE_NAME = 'Violet Caulfield'
 export const SITE_DESCRIPTION =
