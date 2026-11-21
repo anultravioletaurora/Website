@@ -143,19 +143,31 @@ macOS is very much designed for the desktop, and even daily driving a MacBook Pr
 for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
 in front of the screen, ready to click "Allow".
 
-**[Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
-is the Achilles' heel.** Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps
-need permission to talk to devices on the local network, and that permission is granted through a
-GUI prompt. That's great on a laptop, but not on a headless server. It's tied to the binary's code
-signature, so every time [Homebrew](https://brew.sh) upgrades a service like `consul` or `php`,
-macOS treats the new binary as a stranger and wants a fresh click. As far as I can tell this can't
-be scripted either, since the permissions database is protected by
+#### [Local Network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
+
+Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps need permission to talk to
+devices on the local network, and that permission is granted through a GUI prompt. That's great on a
+laptop, but not on a headless server. It's tied to the binary's code signature, so every time
+[Homebrew](https://brew.sh) upgrades a service like `consul` or `php`, macOS treats the new binary
+as a stranger and wants a fresh click. As far as I can tell this can't be scripted either, since the
+permissions database is protected by
 [System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty frustrating: the
 daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
 
-This hasn't been a dealbreaker for me, but it means I'm using remote desktop /
-[Guacamole](https://guacamole.apache.org) after upgrades to ensure that everything is connecting
-properly.
+### [Removable and Network Volumes](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac)
+
+macOS gates removable and network volumes behind privacy prompts, so you get treated to gems like
+_"Nomad would like to access files on a removable volume"_ and _"Nomad would like to access files on
+a network volume"_. On a cluster whose storage lives on a Thunderbolt DAS and a NAS, that's pretty
+much everything. macOS pins the request on the process that launched the task, so it's Nomad asking
+on behalf of Jellyfin, Postgres, and everyone else. Until someone clicks "Allow", the task just sees
+a permission error.
+
+This hasn't been a dealbreaker for me, since these only come up and require my attention nowadays
+after upgrades, but it does mean I'm using macOS
+[Screen Sharing](https://support.apple.com/guide/mac-help/share-the-screen-of-another-mac-mh14066/mac)
+or connecting through [Guacamole](https://guacamole.apache.org) when things change to ensure that
+everything is connecting properly.
 
 ### The Orchestrator: Nomad
 
@@ -377,7 +389,9 @@ Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hard
 #### Maestro Testing
 
 [Maestro](https://maestro.mobile.dev) end-to-end tests are the headline act, and the reason those
-runners need to be Macs in the first place: the iOS Simulator only runs on macOS.
+runners need to be Macs in the first place: the
+[iOS Simulator](https://developer.apple.com/documentation/xcode/running-your-app-in-simulator-or-on-a-device)
+only runs on macOS.
 
 Every PR, plus a nightly run, builds a release copy of the app and drives it through the full UI
 flow on _both_ an iOS Simulator and an
@@ -450,8 +464,9 @@ using the old one, so the playbook also handles the restarts:
   binary that Homebrew has since deleted. Don't ask me how I know this (my Postgres replicas once
   ended up ~23 GB behind for days without me knowing lol).
 
-The one step that can't be automated is the Local Network prompt. After an upgrade, I hop onto each
-Mac via Guacamole and click "Allow" for the freshly signed binaries.
+The one step that can't be automated is the privacy prompts. After an upgrade, I hop onto each Mac
+via Guacamole and click "Allow" on the Local Network and file access prompts for the freshly signed
+binaries.
 
 ### Nomad Life
 
