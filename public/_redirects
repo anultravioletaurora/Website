@@ -1,0 +1,3 @@
+# https://developers.cloudflare.com/workers/static-assets/redirects
+# Posts were served at /blog/<date> before they got descriptive slugs
+/blog/2026-11-19 /blog/2026-11-19-hello-world 301
