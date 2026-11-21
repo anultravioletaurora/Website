@@ -24,7 +24,9 @@ export async function GET(context: APIContext) {
 				description: getPostSnippet(post),
 				// Feed readers resolve links against the feed, not the post, so make them absolute
 				content: html.replace(/(href|src)="([#/][^"]*)"/g, (_, attr, path) => {
-					const url = path.startsWith('#') ? `${link}${path}` : new URL(path, context.site).href
+					const url = path.startsWith('#')
+						? `${link}${path}`
+						: new URL(path, context.site).href
 					return `${attr}="${url}"`
 				}),
 				link,
@@ -34,7 +36,8 @@ export async function GET(context: APIContext) {
 
 	return rss({
 		title: `${SITE_NAME}'s Blog`,
-		description: "Notes on software, open source, and whatever else I'm working on",
+		description:
+			"Notes on software, open source, and whatever else I'm working on",
 		site: context.site!,
 		items,
 	})

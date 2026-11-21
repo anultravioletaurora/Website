@@ -11,7 +11,10 @@ import sharp from 'sharp'
 
 const PHOTO = 'src/assets/avatar.jpg'
 
-const circleMask = (size) => Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" /></svg>`)
+const circleMask = (size) =>
+	Buffer.from(
+		`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" /></svg>`,
+	)
 
 async function circularPhoto(size) {
 	return sharp(PHOTO)
@@ -22,11 +25,19 @@ async function circularPhoto(size) {
 }
 
 // 2x the largest display size (160px in the hero)
-await sharp(PHOTO).resize(320, 320).webp({ quality: 82 }).toFile('public/avatar.webp')
+await sharp(PHOTO)
+	.resize(320, 320)
+	.webp({ quality: 82 })
+	.toFile('public/avatar.webp')
 
-await sharp(await circularPhoto(64)).png({ compressionLevel: 9 }).toFile('public/favicon.png')
+await sharp(await circularPhoto(64))
+	.png({ compressionLevel: 9 })
+	.toFile('public/favicon.png')
 
-await sharp(PHOTO).resize(180, 180).png({ compressionLevel: 9 }).toFile('public/apple-touch-icon.png')
+await sharp(PHOTO)
+	.resize(180, 180)
+	.png({ compressionLevel: 9 })
+	.toFile('public/apple-touch-icon.png')
 
 const WIDTH = 1200
 const HEIGHT = 630
@@ -63,6 +74,12 @@ const background = Buffer.from(`
 </svg>`)
 
 await sharp(background)
-	.composite([{ input: await circularPhoto(PHOTO_SIZE), left: WIDTH - 110 - PHOTO_SIZE, top: (HEIGHT - PHOTO_SIZE) / 2 }])
+	.composite([
+		{
+			input: await circularPhoto(PHOTO_SIZE),
+			left: WIDTH - 110 - PHOTO_SIZE,
+			top: (HEIGHT - PHOTO_SIZE) / 2,
+		},
+	])
 	.png({ compressionLevel: 9 })
 	.toFile('public/og.png')

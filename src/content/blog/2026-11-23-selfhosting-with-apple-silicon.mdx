@@ -1,0 +1,592 @@
+---
+title: iSelfhost • My Mac Mini Cluster
+date: 2026-11-23
+description: Self-hosting on a six-node Mac Mini cluster with Nomad, Consul, and Ansible
+---
+
+import { Image } from 'astro:assets'
+import rackPhoto from '../../assets/blog/iselfhost-rack.jpg'
+import Sponsor from '@/components/Sponsor.astro'
+import RackEnclosures from '@/components/iselfhost/RackEnclosures.astro'
+import ClusterMap from '@/components/iselfhost/ClusterMap.astro'
+import ContainerRuntimes from '@/components/iselfhost/ContainerRuntimes.astro'
+import PowerChart from '@/components/iselfhost/PowerChart.astro'
+import ReleaseNotesPipeline from '@/components/iselfhost/ReleaseNotesPipeline.astro'
+import AppTiers from '@/components/iselfhost/AppTiers.astro'
+
+<figure>
+  <Image
+    src={rackPhoto}
+    alt='A rack of UniFi networking gear above six Mac Minis in RackMac Mini enclosures, labeled orion, taurus, cassiopeia, galileo, hopper, and lovelace'
+    widths={[672, 1344, 1971]}
+    sizes='(max-width: 42rem) 100vw, 42rem'
+    loading='eager'
+    fetchpriority='high'
+  />
+  <figcaption>Wicked Power; Unapologetically Aluminum; An Orchestrated Apple Orchard</figcaption>
+</figure>
+
+## An Apple a Day
+
+I recently made a
+[post on my LinkedIn](https://www.linkedin.com/posts/violet-caulfield-0a422b132_homelab-mac-jellyfin-share-7528837465164447744-ig4e/)
+that got some attention. It was a picture of my racked Mac Minis, and a brief overview of how they
+power my digital life. I got some asks for a blog post discussing it further, and I'm more than
+happy to oblige :)
+
+I started hoarding M4 [Mac Minis](https://www.apple.com/mac-mini/) at the beginning of 2025, back
+when the base model Mac Mini would set you back $599. Since then, my homelab's macOS footprint has
+grown from one node to six, with a full suite of infrastructure-as-code tooling behind it.
+
+Nearly two years in, I've gotten into a rhythm working with them, and I have plenty of thoughts
+(`and code!`) to share.
+
+## Bearing Fruition
+
+Part of why I went down this path was curiosity about Apple Silicon's performance per watt. A Mac
+Mini sips power at idle, runs nearly silent, and still has a Media Engine for video, a GPU that
+speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone who's
+familiar with Apple products, that's a pretty compelling package to put in a rack.
+
+The other part was practical. I work on [Jellify](https://jellify.app), a music player for Jellyfin,
+and it ships on iOS. Building and testing an iOS app, even in a CI pipeline, requires Xcode, which
+requires macOS. If I was going to have Macs in the rack anyway, they might as well pull their weight
+running everything else too.
+
+Here's what that rack looks like, from the network on down.
+
+### The Network
+
+My homelab uses [UniFi](https://ui.com) networking throughout. The
+[Dream Machine Pro](https://store.ui.com/us/en/products/udm-pro) handles routing and doubles as the
+console for managing everything remotely. The
+[Aggregation switch](https://store.ui.com/us/en/products/usw-aggregation) provides the 10Gbit
+backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
+doesn't need the extra bandwidth.
+
+Only the Cosmonautical datacenter (more on the datacenters in a sec) gets the 10Gbit backbone,
+because of how much data its nodes move between each other. Jellyfin, Nextcloud, and friends read
+their libraries over NFS from the UNAS, SeaweedFS replicates every write across its three volume
+servers, and Patroni streams every Postgres change from the primary to its replicas. A gigabit link
+tops out around 115 MB/s, which that mix can eat up on its own, and when it does, everything sharing
+the link slows down with it. With ten times the headroom, a replica catching up or a library scan
+doesn't get in the way of someone's movie. The Jellify nodes mostly talk to GitHub, where my
+internet connection is the bottleneck long before the switch is, so 1Gbit through the USW-24 is
+plenty.
+
+My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
+[Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
+company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
+
+### The Compute
+
+Six Mac Minis live in two Sonnet [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
+enclosures, three to a 2U shelf, and each shelf is its own Nomad datacenter.
+
+<RackEnclosures />
+
+The top shelf, **Cosmonautical**, is the core cluster. Its three M4 Pros run Nomad and Consul as
+server-client combos and host everything I self-host, from Postgres to Jellyfin.
+
+The bottom shelf, **Jellify**, is client-only. It runs
+[GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
+for Jellify and hosts [Penpot](https://penpot.app) for Jellify's design work. A few x64 Linux nodes
+join it for the jobs that don't need a Mac. [Xcode](https://developer.apple.com/xcode/),
+[Maestro](https://maestro.mobile.dev), simulators, and the
+[Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh Mac
+goes from unboxed to building and testing apps with a single playbook run.
+
+Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
+[Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
+supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder how
+this rack full of Macs working together as an actual cluster would be classified.
+
+### The Storage
+
+Bulk SSD storage lives on a [UNAS Pro 8](https://store.ui.com/us/en/products/unas-pro-8), which
+serves [NFS](https://en.wikipedia.org/wiki/Network_File_System) shares (music, books, ROMs and so
+on) to the whole cluster. A DIY Thunderbolt DAS holds 10 hard drives and is attached directly to
+Cassiopeia.
+
+### Altogether Now
+
+Here's how it all fits together, from the router down to the disks:
+
+<ClusterMap />
+
+## Software Sells Hardware
+
+Hardware is nothing without the software to leverage it. Running bleeding-edge, proprietary hardware
+does limit the fun, but as you might imagine there is still plenty of fun to be had.
+
+### The OS: macOS
+
+The software base is, of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
+Silicon thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org),
+but it [doesn't support M4 chips](https://asahilinux.org/docs/platform/feature-support/m4/) - at
+least as of this writing.
+
+macOS is very much designed for the desktop, and even daily driving a MacBook Pro didn't prepare me
+for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
+in front of the screen, ready to click "Allow".
+
+#### Local Network Privacy
+
+Since [macOS Sequoia](https://en.wikipedia.org/wiki/MacOS_Sequoia), apps need
+[permission to talk to devices on the local network](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy),
+and that permission is granted through a GUI prompt. That's great on a laptop, but not on a headless
+server. It's tied to the binary's code signature, so every time [Homebrew](https://brew.sh) upgrades
+a service like `consul` or `php`, macOS treats the new binary as a stranger and wants a fresh click.
+As far as I can tell this can't be scripted either, since the permissions database is protected by
+[System Integrity Protection](https://support.apple.com/en-us/102149). It's pretty frustrating: the
+daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work just fine.
+
+#### Removable and Network Volumes
+
+macOS gates removable and network volumes behind
+[privacy prompts](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac),
+so you get treated to gems like _"Nomad would like to access files on a removable volume"_ and
+_"Nomad would like to access files on a network volume"_. On a cluster whose storage lives on a
+Thunderbolt DAS and a NAS, that's pretty much everything. macOS pins the request on the process that
+launched the task, so it's Nomad asking on behalf of Jellyfin, Postgres, and everyone else. Until
+someone clicks "Allow", the task just sees a permission error.
+
+Neither has been a dealbreaker for me, since nowadays these prompts only come up after upgrades, but
+it does mean I'm using macOS
+[Screen Sharing](https://support.apple.com/guide/mac-help/share-the-screen-of-another-mac-mh14066/mac)
+or connecting through [Guacamole](https://guacamole.apache.org) when things change to ensure that
+everything is connecting properly.
+
+### The Orchestrator: Nomad
+
+With multiple nodes running, I wanted to have an orchestrator to keep everything in check. Before
+the Macs, my homelab ran on a 3-node [Harvester](https://harvesterhci.io) cluster, so
+[Kubernetes](https://kubernetes.io) was what I reached for first. The problem is that Kubernetes is
+built and designed with Linux in mind, relying on Linux primitives to do its job.
+
+I _could_ have run a Linux VM atop macOS to make this work, but that's an extra layer of complexity
+on every node and it walls workloads off from the things that are fun about Apple Silicon in the
+first place: the Media Engine, [Metal](https://developer.apple.com/metal/), and
+[CoreML](https://developer.apple.com/machine-learning/core-ml/).
+
+[Nomad](https://www.nomadproject.io) ended up being a perfect fit. It's a single macOS binary, and
+its [`raw_exec`](https://developer.hashicorp.com/nomad/docs/job-declare/task-driver/raw_exec) driver
+can schedule jobs straight on the host. That means [Jellyfin](https://jellyfin.org) gets hardware
+transcoding, [Ollama](https://ollama.com) gets Metal, and CoreML apps get the Neural Engine, all
+without any GPU passthrough to set up. Nice.
+
+Nomad is also multi-platform, so the cluster isn't locked into macOS. I've got Linux nodes in the
+Jellify datacenter now, and if I ever want a Windows box, it can join too.
+
+#### The Container Runtime: Apple Container
+
+Not everything I run ships as a native macOS app, though. A lot of apps I deploy only come as an OCI
+image, and so I needed a container runtime to bring them online. The obvious choice is Docker,
+whether through [Docker Desktop](https://www.docker.com/products/docker-desktop/) or something
+lighter like [Colima](https://github.com/abiosoft/colima). [Podman](https://podman.io) is also an
+option, and even has a [task driver for Nomad](https://github.com/hashicorp/nomad-driver-podman). I
+opted instead to write my own task driver for Apple's
+[`container`](https://github.com/apple/container) tool, which runs each Linux container in its own
+lightweight VM on the
+[Virtualization framework](https://developer.apple.com/documentation/virtualization).
+
+Docker Desktop, Colima, and Podman all work the same way on the Mac: they boot one big Linux VM in
+the background and run every container inside of it. Colima trims the overhead of Docker Desktop,
+but it's still that same single shared VM. That VM is a box I have to size up front, carving out CPU
+and memory whether anything is running or not, and when it gets wedged, every container on that node
+goes down with it. It's also one more thing for Nomad to know nothing about, since all it sees is a
+CLI talking to a daemon that's talking to a VM.
+
+Apple's `container` flips that around. There's no shared VM to babysit; each container _is_ its own
+VM, [booting in under a second](https://github.com/apple/containerization) and sized to what the job
+asks for. When a Nomad allocation stops, its VM goes away and the memory goes back to macOS, ready
+for another job to use. Every container also gets its own IP address, so there's no port-forwarding
+dance between the host and a VM, and one misbehaving container can't take its neighbors out. Apple's
+[Meet Containerization](https://developer.apple.com/videos/play/wwdc2025/346/) session from WWDC25
+goes deeper under the hood to show how it all works.
+
+<ContainerRuntimes />
+
+It's also just... it's Apple's. It's written in [Swift](https://www.swift.org) and built on the same
+frameworks as the rest of the OS, so it gets better with every macOS release instead of fighting
+against it. On a cluster that's all-in on Apple Silicon where memory is at a premium, using Apple's
+own container runtime felt like the natural fit. It's even open source.
+
+If you'd like to try the driver out for yourself, you can grab the latest release from
+[my GitHub repository](https://github.com/anultravioletaurora/nomad-driver-container/releases).
+Feature requests welcome :)
+
+#### The Service Mesh: Consul
+
+Being built under the same HashiCorp roof, Nomad pairs nicely with [Consul](https://www.consul.io)
+for service discovery, health checks, and key/value storage. Every service registers itself with
+Consul, so jobs find each other by name over
+[DNS](https://developer.hashicorp.com/consul/docs/discover/dns) (`<service>.service.consul`) instead
+of hard-coded IPs.
+
+It pulls double duty, too: Consul is the
+[distributed config store](https://patroni.readthedocs.io/en/latest/dynamic_configuration.html) that
+[Patroni](https://github.com/patroni/patroni) uses to handle Postgres failover, and it's where the
+[Terraform state](https://developer.hashicorp.com/terraform/language/backend/consul) for my Nomad
+jobs lives.
+
+### The Management: Ansible
+
+Setting up six Macs by hand was never going to happen. I'm far too lazy for that.
+
+[Ansible](https://www.ansible.com) was the obvious choice for managing this six-pack. It runs over
+SSH and only needs Python on the target, which the
+[Xcode Command Line Tools](https://developer.apple.com/documentation/xcode/installing-the-command-line-tools)
+provide. There's no agent to install and nothing else to bootstrap beyond flipping on
+[Remote Login](https://support.apple.com/guide/mac-help/allow-a-remote-computer-to-access-your-mac-mchlp1066/mac).
+
+Since adopting Ansible as my management tool of choice, I've built up quite a collection of
+collections (Collectionception?). They've grown into a nice lil family and are
+[all published on Ansible Galaxy](https://galaxy.ansible.com/ui/namespaces/cosmonautical/):
+
+- [`cosmonautical.macible`](https://github.com/Cosmonautical-Cloud/Macible): generic macOS roles for
+  any Mac, server or workstation. Software Update, Homebrew, Xcode, the Android SDK, NFS mounts,
+  container runtimes, etc.
+- [`cosmonautical.nomadintosh`](https://github.com/Cosmonautical-Cloud/Nomadintosh): Nomad and
+  Consul on macOS, built on top of Macible. Uses Homebrew for the binaries, and bootstraps
+  [LaunchAgents](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
+  to keep them running.
+- [`cosmonautical.nomaduntu`](https://github.com/Cosmonautical-Cloud/Nomaduntu): the Ubuntu
+  counterpart, using HashiCorp's apt repo and [systemd](https://systemd.io).
+- [`cosmonautical.nomadable`](https://github.com/Cosmonautical-Cloud/Nomadable): the parent
+  playbook. It routes each host to Nomadintosh or Nomaduntu based on its OS, so a mixed macOS and
+  Ubuntu cluster deploys in a single run.
+
+The [Nomad jobs](https://github.com/Jellify-Music/Nomad-Jobs) themselves are defined in
+[Terraform](https://www.terraform.io), and both the Ansible playbooks and Terraform configs get run
+by [Semaphore](https://semaphoreui.com), which (of course) runs as a Nomad job on the very cluster
+it deploys to.
+
+### Apple + IBM sounds familiar...
+
+If you're keeping track: Nomad, Consul, and Terraform come from
+[HashiCorp](https://en.wikipedia.org/wiki/HashiCorp), which IBM
+[acquired in 2025](https://newsroom.ibm.com/2025-02-27-ibm-completes-acquisition-of-hashicorp,-creates-comprehensive,-end-to-end-hybrid-cloud-platform),
+and Ansible comes from [Red Hat](https://en.wikipedia.org/wiki/Red_Hat), which IBM acquired back
+in 2019. So my homelab is _technically_ Apple hardware running IBM software.
+
+Just missing Motorola in the mix and it's like [AIM](https://en.wikipedia.org/wiki/AIM_alliance)
+never dissolved.
+
+## Roll Out the Barrels
+
+The jobs I run on the rack can be broken up into tiers, based on how critical they are.
+
+<AppTiers />
+
+Some jobs are `raw_exec`, running on bare macOS (Jellyfin, Postgres/Patroni, Nextcloud's php-fpm,
+AudioMuse), while others are Linux containers through Apple `container` via my
+[`nomad-driver-container`](https://github.com/anultravioletaurora/nomad-driver-container) plugin.
+
+## Shut Up and Drive!
+
+All of this would be a very beautiful but expensive space heater if nobody used it. Cosmonautical is
+mostly used by me, my friends, and my family, and Jellyfin sees the most use by a mile.
+
+### Jellyfin and Co.
+
+Jellyfin is where I watch and listen to damn near everything. Movies, shows, and Live TV through
+Dispatcharr all come from the cluster, and when someone wants something that isn't in the library
+yet, they ask for it in Seerr instead of texting me. Since Jellyfin runs natively on macOS,
+transcoding goes through the Media Engine, so a friend streaming on hotel Wi-Fi doesn't bring the
+Mac to its knees.
+
+Music is obviously the part I care about the most. It's how Jellify gets dogfooded: I stream
+self-hosted music through Jellify every day across various setups, so I'm constantly on the hunt for
+bugs or imagining new features.
+
+#### Sonic Analysis with AudioMuse-AI
+
+Streaming services have one big advantage over a self-hosted library, and that's recommendations.
+Spotify knows that a song is upbeat, or mellow, or sounds a lot like another song. A folder of FLACs
+on a NAS doesn't know any of that.
+
+[AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI) closes that gap. It analyzes the audio of
+every track in the Jellyfin libraries, building up a sonic profile of the whole collection. It runs
+as a native `.app` on macOS, so the analysis happens on Apple Silicon with CoreML, and the results
+live in Postgres and Redis alongside everything else.
+
+AudioMuse-AI's [Jellyfin plugin](https://github.com/NeptuneHub/audiomuse-ai-plugin) exposes all of
+it through Jellyfin itself. The plugin swaps Jellyfin's Instant Mix for one built on sonic
+similarity, so any Jellyfin client gets smarter mixes without changing a thing. It also adds
+endpoints for similar tracks and artists, plain-language search ("upbeat summer songs"), and
+chat-generated playlists.
+
+To make those easy to use in Jellify, I wrote a typed client for the plugin,
+[`@jellify-music/audiomuse-ai-jellyfin-sdk`](https://github.com/Jellify-Music/AudioMuse-AI-Jellyfin-SDK),
+built on top of the [Jellyfin TypeScript SDK](https://github.com/jellyfin/jellyfin-sdk-typescript).
+Jellify checks if the plugin is installed on your server, and if it is, you can describe a playlist
+and have AudioMuse-AI build it from your own library. All of that analysis runs on hardware I own,
+against music I own.
+
+### Jellify Actions
+
+The Jellify datacenter was built to run GitHub Actions for Jellify. A Nomad
+[`system` job](https://developer.hashicorp.com/nomad/docs/concepts/scheduling/schedulers) puts one
+ephemeral runner on every node tagged as a runner. Each runner takes exactly one job, wipes its work
+folder, and registers a fresh replacement, so no build ever sees the last one's leftovers.
+
+Any action that doesn't need a Mac lands on x64 Linux runners from the same Nomad job. These
+include:
+
+- [Jest](https://jestjs.io) unit tests on every branch push
+- JS bundle and Android APK builds on PRs
+- Publishing OTA updates, and cleaning up the per-PR OTA branches once a PR closes
+
+Fork PRs get GitHub's hosted runners instead, so fork code never runs on my hardware, as
+[GitHub recommends](https://docs.github.com/en/actions/reference/security/secure-use#hardening-for-self-hosted-runners).
+
+#### Maestro Testing
+
+[Maestro](https://maestro.mobile.dev) end-to-end tests are the headline act, and the reason those
+runners need to be Macs in the first place: the
+[iOS Simulator](https://developer.apple.com/documentation/xcode/running-your-app-in-simulator-or-on-a-device)
+only runs on macOS.
+
+Every PR, plus a nightly run, builds a release copy of the app and drives it through the full UI
+flow on _both_ an iOS Simulator and an
+[Android emulator](https://developer.android.com/studio/run/emulator): setup and login, home, quick
+actions, library, search, discover, settings, and the player and queue. The same flows run on both
+platforms, with small helper subflows papering over the differences (iOS has no back button, for
+one).
+
+The tests run as `raw_exec` straight on macOS, using the Xcode, simulators, and Android SDK that
+Ansible provisions, so there's no VM between the emulator and the hardware. When a run finishes,
+screenshots, logs, and the UI hierarchy get uploaded as artifacts, and the result gets posted to
+[Discord](https://discord.gg/yf8fBatktn). If a PR breaks the player or the queue, I find out before
+it ships, not from a bug report.
+
+#### Release Notes
+
+The Jellify runners are mostly walled off from Cosmonautical. There's one exception, though: release
+notes.
+
+Every Jellify release, both store builds and over-the-air updates, gets its notes written by an LLM
+running on the cluster. The pipeline is a
+[composite GitHub Action](https://github.com/Jellify-Music/App/tree/main/.github/actions/generate-release-notes)
+with a few steps:
+
+1. **Work out the tag.** A store release counts from the previous store release, so people updating
+   from the App Store or Play Store see everything since their last update, including anything that
+   already shipped over the air. An OTA update counts from the previous tag of either kind, so it
+   only covers what's new.
+2. **Collect the changes.** A script walks every commit between the two tags and asks the GitHub API
+   which merged PR each one belongs to. Then it uses [GraphQL](https://docs.github.com/en/graphql)
+   (the only API that tells you which issues a PR closes) to pull in the closed issues, and it
+   collects every contributor who isn't a bot. Version bumps and merge commits are skipped, since
+   they don't say anything about the release.
+3. **Write the narrative.** The PR titles, closed issues, and any commits that didn't come from a PR
+   go to [`gemma4:12b`](https://ollama.com/library/gemma4), running on Ollama and served through the
+   [OpenAI-compatible API](https://docs.openwebui.com/reference/api-endpoints/) in Open WebUI. The
+   prompt asks for a short summary and three highlight bullet points. For OTA updates, it also
+   mentions that the update downloads the next time the app is opened.
+4. **Ship it.** The narrative goes to [TestFlight](https://developer.apple.com/testflight/) with the
+   iOS build, and to Discord through a
+   [webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) that pings
+   the release role. The GitHub release gets the narrative too, followed by the list of closed
+   issues, merged PRs, and a thank-you to everyone who contributed.
+
+<ReleaseNotesPipeline />
+
+So every Jellify release goes from merged PRs to TestFlight and a Discord announcement without me
+writing a word, all powered by a Mac Mini in my rack.
+
+### Designing in Penpot
+
+The newest job on the rack is [Penpot](https://penpot.app), an open source design and prototyping
+tool. Jellify's designs used to live in [Figma](https://www.figma.com), but we wanted a more free
+and open alternative and Penpot is the one we landed on. Unlike the rest of my Tier 2 apps, it runs
+on the Jellify datacenter: the frontend, backend, and exporter each run as an Apple `container` task
+on the Jellify Macs.
+
+It doesn't bring any backing services of its own, though. Consul spans both datacenters, so Penpot
+finds the same Postgres and Redis clusters as every Cosmonautical job, and keeps its assets on an
+NFS share. Logins go through Keycloak, and only members of Jellify's design, engineering, and triage
+teams on GitHub get in. A Nomad batch job syncs those teams into a Keycloak group every 15 minutes,
+so adding someone to a GitHub team is all it takes to give them access.
+
+It also got me reacquainted with the Network Volumes prompt from earlier. Each Mac quietly waited
+for someone to click "Allow" before Penpot's containers could start, and I had deployed Penpot when
+I wasn't there to click it.
+
+## Standard Operating Procedures
+
+With vulnerabilities landing faster than ever, I've had plenty of practice running through patching
+procedures. Patches go in one of two ways: Homebrew via Ansible, or Nomad jobs via Semaphore.
+
+### Homebrewed
+
+Homebrew upgrades get deployed by rerunning the
+[Nomadintosh](https://github.com/Cosmonautical-Cloud/Nomadintosh) playbook. Every run upgrades
+Nomad, Consul, and the rest of the Homebrew packages in my inventory to their latest versions, so
+patching a host is as simple as running the playbook again.
+
+Upgrading is the easy part. Homebrew swaps the binary on disk, but anything already running keeps
+using the old one, so the playbook also handles the restarts:
+
+- **Nomad and Consul** restart one host at a time, and the playbook waits for the agent and the
+  cluster to report healthy before moving on to the next one. A run that upgrades every server never
+  takes more than one of them out of quorum.
+- **Nomad jobs** running directly on macOS (`raw_exec`) get restarted afterwards, again one at a
+  time. They'd otherwise keep running the old binaries, under an executor started by the old `nomad`
+  binary that Homebrew has since deleted. Don't ask me how I know this (my Postgres replicas once
+  ended up ~23 GB behind for days without me knowing lol).
+
+The one step that can't be automated is the privacy prompts. After an upgrade, I hop onto each Mac
+via Guacamole and click "Allow" on the Local Network and file access prompts for the freshly signed
+binaries.
+
+### Nomad Life
+
+Version bumps for Nomad jobs come from [Renovate](https://github.com/renovatebot/renovate), which
+opens a PR against my Terraform whenever a new release of an app ships. Once I merge it to `main`,
+Semaphore runs `terraform plan` and then holds the change for my approval before `terraform apply`
+rolls it out to the cluster. GitOps FTW.
+
+## The Power to Be Your Best
+
+So, how did my curiosity about performance per watt pan out? Pretty well, actually.
+
+Before the Macs, my three-node Harvester cluster (each node with a Ryzen 7 5700G and an RTX 4060)
+idled somewhere in the mid 200Ws, and could easily pull around 400W once I threw some real load at
+it. Those numbers come from remembering what my UPS showed, not careful measurement, but they're in
+the right ballpark.
+
+The new rack (affectionately referred to as "Mac Rack Mini Pro") has twice as many nodes and still
+comes in well under that. It idles in the mid 100Ws, and under load it settles in the mid 200Ws,
+about where the old cluster used to _idle_. Those are whole-rack numbers by the way: the UPS also
+powers the networking gear, the UNAS, and the DAS, so the Minis themselves are drawing even less
+than that.
+
+<PowerChart />
+
+That's added up over time. Since making the switch, my power usage has dropped by around 75–125 kWh
+a month. Twice the nodes, less power.
+
+## Should You Eat the Forbidden Fruit?
+
+For most people, as you might've guessed, probably not. If you don't _need_ macOS, a cheaper Linux
+box with discrete graphics for hardware acceleration will get you to the same place with far less
+friction.
+
+But if you're a die-hard Apple fan, appreciate fun hardware, or your use case actually requires
+Apple's software like Xcode, the seeds you sow will yield a nice harvest. The Minis are whisper
+quiet, sip power, and can really crunch data. Running them as a cluster, as you can see, is entirely
+possible.
+
+They aren't cheap, and macOS is prepared to fight you every step of the way. No matter how much you
+automate, be prepared to remote into the desktop every now and again to click through whatever
+prompt it's decided to throw at you this time.
+
+## What's Next?
+
+I truly believe a homelab is never really finished. As such, I've already got a couple of ideas
+lined up for the rack ;)
+
+### Downloading More RAM
+
+The biggest limit on what I can run locally is memory. Each Cosmonautical Mini has 24GB of unified
+memory, and that has to cover the model, its context, and everything else the node is running. That
+rules out a lot of the bigger open models.
+
+Apple recently added [RDMA](https://en.wikipedia.org/wiki/Remote_direct_memory_access) over
+Thunderbolt 5 to macOS, which lets one Mac read and write another Mac's memory directly, without
+going through the network stack. Taurus and Orion both have Thunderbolt 5 ports, so I'm planning to
+cable them together and split a single model across both of them.
+
+Ollama can't do that part, since it only runs a model on one machine. Apple's
+[MLX](https://github.com/ml-explore/mlx) can, though. Its
+[distributed mode](https://ml-explore.github.io/mlx/build/html/usage/distributed.html) is built to
+use RDMA over Thunderbolt, and [`mlx-lm`](https://github.com/ml-explore/mlx-lm) can shard a model
+across both Minis and serve it over an OpenAI-compatible API. That means Open WebUI and the release
+notes pipeline can talk to it the same way they talk to Ollama today. Ollama can stick around for
+the smaller models, and MLX gets the big one that needs both machines.
+
+### HomeKitschy
+
+My smart home already runs on [Home Assistant OS](https://www.home-assistant.io/installation/), on
+(you guessed it) a Mac Mini. This one's a
+[2012 Intel model](https://en.wikipedia.org/wiki/Mac_mini#Third_generation_%28Unibody%29) with a
+[Nortek GoControl HUSBZB-1 QuickStick Combo](https://zigbee.blakadder.com/Nortek_HUSBZB-1.html)
+Zigbee + Z-Wave USB stick plugged into it. Home Assistant's
+[HomeKit Bridge](https://www.home-assistant.io/integrations/homekit/) integration exposes its
+entities to HomeKit, and an [Apple TV 4K](https://www.apple.com/apple-tv-4k/) acts as the
+[home hub](https://support.apple.com/en-us/102557), so everything shows up in the
+[Home app](https://www.apple.com/home-app/) and works with Siri, no matter what brand it is.
+
+Next up, I want to expand the setup with [Node-RED](https://nodered.org), [MQTT](https://mqtt.org),
+and [Zigbee2MQTT](https://www.zigbee2mqtt.io). Rather than piling more add-ons onto the old Mini,
+I'm going to deploy them as Nomad jobs, so they're coordinated and managed like everything else on
+the rack.
+
+Once that's in place, the rack itself can join the house. The UPS's power draw (via
+[Network UPS Tools](https://www.home-assistant.io/integrations/nut/)) and each node's stats can go
+into Home Assistant, onto a [Lovelace dashboard](https://www.home-assistant.io/dashboards/), and
+through the HomeKit Bridge into the Home app, with an alert on my phone when something goes down.
+Then "Hey Siri, how's the cluster?" would get an actual answer, and Home automations could react to
+the rack the same way they react to everything else in the house.
+
+I've also ordered an [Apple HomeView](https://www.apple.com/apple-homeview/) for the purpose of
+seeing how it reacts to Jellify, but it should pair nicely with these Home Assistant plans.
+
+## A Few Thank Yous
+
+A lot of people made this setup possible and inspired me to build it, and they deserve a salute.
+
+### The Maintainers
+
+Every piece of this setup stands on someone else's work, and most of it is maintained in the open by
+people who owe me nothing. Thank you to the maintainers of:
+
+- [Homebrew](https://brew.sh), which installs and upgrades just about everything on the Macs
+- [Nomad](https://www.nomadproject.io), [Consul](https://www.consul.io), and
+  [Terraform](https://www.terraform.io), the backbone of the cluster
+- The [Ansible community](https://www.ansible.com/community) and
+  [Semaphore](https://semaphoreui.com), which build and deploy it all
+- Apple's [`container`](https://github.com/apple/container), which runs every Linux workload I have
+- [Maestro](https://maestro.mobile.dev), for making mobile UI testing on real simulators and
+  emulators approachable
+
+### The Builders
+
+The apps are the reason the cluster exists at all. Thank you to the open source contributors behind
+[Nextcloud](https://nextcloud.com), [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr),
+[Ollama](https://ollama.com), [Open WebUI](https://openwebui.com),
+[RomM](https://github.com/rommapp/romm), [Guacamole](https://guacamole.apache.org),
+[Seerr](https://github.com/seerr-team/seerr), and [Penpot](https://penpot.app).
+
+And to the people behind the services those apps lean on, quietly doing their jobs underneath:
+[PostgreSQL](https://www.postgresql.org) and [Patroni](https://github.com/patroni/patroni),
+[Redis](https://redis.io), [SeaweedFS](https://github.com/seaweedfs/seaweedfs),
+[Traefik](https://traefik.io), [Fail2ban](https://github.com/fail2ban/fail2ban),
+[OpenLDAP](https://www.openldap.org), [Keycloak](https://www.keycloak.org), and
+[Renovate](https://github.com/renovatebot/renovate).
+
+### The Visionaries
+
+Some people showed me this was possible and made me realize its potential before I ever racked a
+Mac. Thank you to:
+
+- [NeptuneHub](https://github.com/NeptuneHub), who has been realizing my dream of open source sonic
+  analysis with [AudioMuse-AI](https://github.com/NeptuneHub/AudioMuse-AI), and made it possible to
+  run it natively on Apple Silicon
+- The [Jellyfin contributors](https://github.com/jellyfin), who have made
+  [hardware accelerated transcoding](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/)
+  a reality on Apple Silicon
+- [Jeff Geerling](https://www.jeffgeerling.com), whose
+  [`geerlingguy.mac`](https://github.com/geerlingguy/ansible-collection-mac) collection handles the
+  Homebrew and Mac App Store installs in my playbooks, and whose
+  [Mac adventures](https://www.jeffgeerling.com/tags/mac-mini) gave me the confidence to build a
+  cluster of my own
+
+### The Sponsors
+
+Finally, thank you to everyone who sponsors me on GitHub and Patreon. Your support is what lets me
+spend time building systems like this one and working on Jellify.
+
+<Sponsor />

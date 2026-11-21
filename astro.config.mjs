@@ -8,7 +8,7 @@ const BLOG_DIR = './src/content/blog'
 
 /**
  * Extracts the value of a frontmatter field from the source string, if it exists and returns it as a string
- * 
+ *
  * @param {string} name  The name of the frontmatter field to extract
  * @param {string} source The source string containing the frontmatter
  * @returns {string | undefined} The value of the frontmatter field, or undefined if it doesn't exist
@@ -25,10 +25,15 @@ const postDates = new Map(
 		.map((file) => {
 			const source = readFileSync(`${BLOG_DIR}/${file}`, 'utf8')
 			const field = (/** @type {string} */ name) => fieldFilter(name, source)
-			return [file.replace(/\.mdx?$/, ''), new Date(field('updated') ?? field('date') ?? 0)]
+			return [
+				file.replace(/\.mdx?$/, ''),
+				new Date(field('updated') ?? field('date') ?? 0),
+			]
 		}),
 )
-const latestPost = new Date(Math.max(0, ...[...postDates.values()].map((date) => date.getTime())))
+const latestPost = new Date(
+	Math.max(0, ...[...postDates.values()].map((date) => date.getTime())),
+)
 
 export default defineConfig({
 	site: 'https://violetcaulfield.com',
@@ -43,8 +48,14 @@ export default defineConfig({
 			serialize(item) {
 				const { pathname } = new URL(item.url)
 				const post = pathname.match(/^\/blog\/(.+)$/)?.[1]
-				const lastmod = post ? postDates.get(post) : ['/', '/blog'].includes(pathname) ? latestPost : undefined
-				return lastmod && lastmod.getTime() > 0 ? { ...item, lastmod: lastmod.toISOString() } : item
+				const lastmod = post
+					? postDates.get(post)
+					: ['/', '/blog'].includes(pathname)
+						? latestPost
+						: undefined
+				return lastmod && lastmod.getTime() > 0
+					? { ...item, lastmod: lastmod.toISOString() }
+					: item
 			},
 		}),
 	],

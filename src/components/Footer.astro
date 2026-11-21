@@ -7,25 +7,31 @@ const links = [...socialLinks, emailLink, rssLink]
 
 <footer>
 	<div class='inner'>
-		<p>© {new Date().getFullYear()} {SITE_NAME}</p>
+		<p>
+			© {new Date().getFullYear()} {SITE_NAME}
+		</p>
 
 		<ul>
-			{
-				links.map((link) => (
-					<li>
-						<a href={link.href} rel='me' aria-label={link.label} title={link.label}>
-							<Icon path={link.icon} />
-						</a>
-					</li>
-				))
-			}
+			{links.map((link) => (
+				<li>
+					<a
+						href={link.href}
+						rel='me'
+						aria-label={link.label}
+						title={link.label}
+					>
+						<Icon path={link.icon} />
+					</a>
+				</li>
+			))}
 		</ul>
 	</div>
 </footer>
 
 <style>
 	footer {
-		border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+		border-top: 1px solid
+			color-mix(in srgb, var(--border-color) 40%, transparent);
 	}
 
 	.inner {
