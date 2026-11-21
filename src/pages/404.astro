@@ -27,22 +27,32 @@ import Layout from '../layouts/Layout.astro'
 		font-weight: 800;
 		line-height: 1;
 		transform-origin: top center;
-		animation: swing 1s ease-in-out 300ms both;
+		animation: swing 3s ease-in-out 300ms both;
 	}
 
-	/* Adapted from animate.css (https://animate.style, MIT) */
+	/* Adapted from animate.css's swing (https://animate.style, MIT), slowed down and damped gradually so it feels heavy.
+	 * Each swing takes the same time, like a pendulum, and loses about a third of its reach */
 	@keyframes swing {
-		20% {
-			transform: rotate(15deg);
+		10% {
+			transform: rotate(25deg);
 		}
-		40% {
-			transform: rotate(-10deg);
+		23% {
+			transform: rotate(-18deg);
 		}
-		60% {
+		36% {
+			transform: rotate(12deg);
+		}
+		49% {
+			transform: rotate(-8deg);
+		}
+		62% {
 			transform: rotate(5deg);
 		}
-		80% {
-			transform: rotate(-5deg);
+		75% {
+			transform: rotate(-3deg);
+		}
+		88% {
+			transform: rotate(1.5deg);
 		}
 		to {
 			transform: rotate(0deg);
