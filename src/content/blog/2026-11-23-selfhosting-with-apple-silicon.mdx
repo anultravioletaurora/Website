@@ -17,7 +17,7 @@ import AppTiers from '@/components/iselfhost/AppTiers.astro'
 <figure>
   <Image
     src={rackPhoto}
-    alt='A rack of UniFi networking gear above six Mac Minis in RackMac Mini enclosures, labeled orion, taurus, cassiopeia, galileo, hopper, and lovelace'
+    alt='A rack of UniFi networking gear above six Mac Minis in 2 Sonnettech RackMac Mini enclosures, labeled orion, taurus, cassiopeia, galileo, hopper, and lovelace'
     widths={[672, 1344, 1971]}
     sizes='(max-width: 42rem) 100vw, 42rem'
     loading='eager'
@@ -44,9 +44,9 @@ Nearly two years in, I've gotten into a rhythm working with them, and I have ple
 ## Bearing Fruition
 
 Part of why I went down this path was curiosity about Apple Silicon's performance per watt. A Mac
-Mini sips power at idle, runs nearly silent, and still has a Media Engine for video, a GPU that
-speaks Metal, and a Neural Engine for CoreML. For a homelab that's on 24/7, and for someone who's
-familiar with Apple products, that's a pretty compelling package to put in a rack.
+Mini sips power at idle, runs damn near silent, and still has a Media Engine for video, a GPU that
+speaks Metal, and a Neural Engine for CoreML workloads. For a homelab that's on 24/7, and for
+someone who's already cozy with Apple products, that's a pretty compelling package.
 
 The other part was practical. I work on [Jellify](https://jellify.app), a music player for Jellyfin,
 and it ships on iOS. Building and testing an iOS app, even in a CI pipeline, requires Xcode, which
@@ -60,19 +60,18 @@ Here's what that rack looks like, from the network on down.
 My homelab uses [UniFi](https://ui.com) networking throughout. The
 [Dream Machine Pro](https://store.ui.com/us/en/products/udm-pro) handles routing and doubles as the
 console for managing everything remotely. The
-[Aggregation switch](https://store.ui.com/us/en/products/usw-aggregation) provides the 10Gbit
-backbone, and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that
-doesn't need the extra bandwidth.
+[Aggregation switch](https://store.ui.com/us/en/products/usw-aggregation) provides the 10Gbit links,
+and a [24-port switch](https://store.ui.com/us/en/products/usw-24) handles everything that doesn't
+need the extra bandwidth.
 
-Only the Cosmonautical datacenter (more on the datacenters in a sec) gets the 10Gbit backbone,
-because of how much data its nodes move between each other. Jellyfin, Nextcloud, and friends read
-their libraries over NFS from the UNAS, SeaweedFS replicates every write across its three volume
-servers, and Patroni streams every Postgres change from the primary to its replicas. A gigabit link
-tops out around 115 MB/s, which that mix can eat up on its own, and when it does, everything sharing
-the link slows down with it. With ten times the headroom, a replica catching up or a library scan
-doesn't get in the way of someone's movie. The Jellify nodes mostly talk to GitHub, where my
-internet connection is the bottleneck long before the switch is, so 1Gbit through the USW-24 is
-plenty.
+Only the Cosmonautical datacenter (more on the datacenters in a sec) gets the 10Gbit link, because
+of how much data its nodes move between each other. Jellyfin, Nextcloud, and friends read their
+libraries over NFS from the UNAS, SeaweedFS replicates every write across its three volume servers,
+and Patroni streams every Postgres change from the primary to its replicas. A gigabit link tops out
+around 115 MB/s, which that mix can eat up on its own, and when it does, everything sharing the link
+slows down with it. With ten times the headroom, a replica catching up or a library scan doesn't get
+in the way of someone's movie. The Jellify nodes mostly talk to GitHub, where my internet connection
+is the bottleneck long before the switch is, so 1Gbit through the USW-24 is plenty.
 
 My favorite [Ubiquiti Networks](https://en.wikipedia.org/wiki/Ubiquiti) fun fact is that founder
 [Robert Pera](https://en.wikipedia.org/wiki/Robert_Pera) had worked at Apple before starting the
@@ -80,26 +79,26 @@ company, so it seems poetic to _unify_ Apple and Ubiquiti hardware together.
 
 ### The Compute
 
-Six Mac Minis live in two Sonnet [RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html)
-enclosures, three to a 2U shelf, and each shelf is its own Nomad datacenter.
+The six Mac Minis live in two Sonnet
+[RackMac Mini](https://www.sonnettech.com/product/rackmacmini.html) enclosures, three to a 2U shelf,
+and each shelf is its own Nomad datacenter.
 
 <RackEnclosures />
 
 The top shelf, **Cosmonautical**, is the core cluster. Its three M4 Pros run Nomad and Consul as
-server-client combos and host everything I self-host, from Postgres to Jellyfin.
+server-client combos and host everything I personally rely on, from Postgres to Jellyfin.
 
 The bottom shelf, **Jellify**, is client-only. It runs
 [GitHub Actions runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners)
-for Jellify and hosts [Penpot](https://penpot.app) for Jellify's design work. A few x64 Linux nodes
-join it for the jobs that don't need a Mac. [Xcode](https://developer.apple.com/xcode/),
-[Maestro](https://maestro.mobile.dev), simulators, and the
-[Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh Mac
-goes from unboxed to building and testing apps with a single playbook run.
+for Jellify and hosts [Penpot](https://penpot.app) for Jellify's design work.
+[Xcode](https://developer.apple.com/xcode/), [Maestro](https://maestro.mobile.dev), simulators, and
+the [Android SDK](https://developer.android.com/studio) are all provisioned by Ansible, so a fresh
+Mac goes from unboxed to building and testing apps with a single playbook run.
 
 Back in 1999, Apple ran [an ad](https://www.youtube.com/watch?v=OoxvLq0dFvw) bragging that the
 [Power Mac G4](https://en.wikipedia.org/wiki/Power_Mac_G4) was so powerful it counted as a
-supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder how
-this rack full of Macs working together as an actual cluster would be classified.
+supercomputer under US export rules, complete with tanks rolling in to guard it. Makes me wonder
+what kind of equipment should be guarding this setup.
 
 ### The Storage
 
@@ -110,25 +109,24 @@ Cassiopeia.
 
 ### Altogether Now
 
-Here's how it all fits together, from the router down to the disks:
+Here's how it all fits together:
 
 <ClusterMap />
 
 ## Software Sells Hardware
 
-Hardware is nothing without the software to leverage it. Running bleeding-edge, proprietary hardware
-does limit the fun, but as you might imagine there is still plenty of fun to be had.
+Hardware is nothing without the software to leverage it. As you might imagine, running
+bleeding-edge, proprietary hardware does limit the fun, but there is still plenty of fun to be had.
 
 ### The OS: macOS
 
-The software base is, of course, [macOS](https://www.apple.com/macos/). Linux _does_ support Apple
-Silicon thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org),
-but it [doesn't support M4 chips](https://asahilinux.org/docs/platform/feature-support/m4/) - at
-least as of this writing.
+The base of the stack is [macOS](https://www.apple.com/macos/). Linux _does_ support Apple Silicon
+thanks to the people way smarter than me working on [Asahi Linux](https://asahilinux.org), but it
+[doesn't support M4 chips](https://asahilinux.org/docs/platform/feature-support/m4/) - at least as
+of this writing.
 
-macOS is very much designed for the desktop, and even daily driving a MacBook Pro didn't prepare me
-for running it headless. Most of the challenges come down to macOS assuming there's a person sitting
-in front of the screen, ready to click "Allow".
+macOS is very much designed for the desktop, and most of the challenges come down to macOS assuming
+there's a person sitting in front of the screen, ready to click "Allow".
 
 #### Local Network Privacy
 
@@ -145,14 +143,13 @@ daemon logs `no route to host` while `nc` and `ssh` to the exact same IP work ju
 
 macOS gates removable and network volumes behind
 [privacy prompts](https://support.apple.com/guide/mac-help/control-access-to-files-and-folders-on-mac-mchld5a35146/mac),
-so you get treated to gems like _"Nomad would like to access files on a removable volume"_ and
-_"Nomad would like to access files on a network volume"_. On a cluster whose storage lives on a
-Thunderbolt DAS and a NAS, that's pretty much everything. macOS pins the request on the process that
-launched the task, so it's Nomad asking on behalf of Jellyfin, Postgres, and everyone else. Until
-someone clicks "Allow", the task just sees a permission error.
+so you get treated to gems like _"This application would like to access files on a removable
+volume"_ and _"This application would like to access files on a network volume"_. On a cluster whose
+storage lives externally, that's pretty much everything. Until someone clicks "Allow", the task just
+sits waiting to start up.
 
-Neither has been a dealbreaker for me, since nowadays these prompts only come up after upgrades, but
-it does mean I'm using macOS
+Neither of these have been a dealbreaker for me, since nowadays these prompts only come up after I'm
+doing upgrades, but it does mean I'm using macOS
 [Screen Sharing](https://support.apple.com/guide/mac-help/share-the-screen-of-another-mac-mh14066/mac)
 or connecting through [Guacamole](https://guacamole.apache.org) when things change to ensure that
 everything is connecting properly.
@@ -232,7 +229,7 @@ jobs lives.
 
 ### The Management: Ansible
 
-Setting up six Macs by hand was never going to happen. I'm far too lazy for that.
+Setting up six Macs by hand was never going to happen, I'm _far_ too lazy for that.
 
 [Ansible](https://www.ansible.com) was the obvious choice for managing this six-pack. It runs over
 SSH and only needs Python on the target, which the
