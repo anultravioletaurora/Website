@@ -1,0 +1,192 @@
+---
+title: One Year of Jellify • Building a Music App for Jellyfin
+date: 2026-12-21
+description:
+  Looking back on one year of Jellify, the open source Jellyfin music player for iOS and Android,
+  including why I built it, how it works, and what's next
+---
+
+{/* Intro: a sentence or two that says plainly what Jellify is (a music player for Jellyfin) and that it's been out for a year. Search engines and link previews lean on the opening paragraph */}
+
+It's been a year since Jellify hit storefronts, and over two years since development started.
+
+## What's a jellify?
+
+{/* What Jellify is */}
+
+The name came from the term "jellify", which is a verb defined as "to make gelatinous"
+
+## From Analog to Digital
+
+{/* Why you built it */}
+
+## If At First You Don't Succeed
+
+I originally started
+[the first version of Jellify](https://github.com/anultravioletaurora/Jellify---Swift/) back in
+October 2021. It began as a native [SwiftUI](https://developer.apple.com/xcode/swiftui/) app for
+Apple devices that synced the entire [Jellyfin](https://jellyfin.org) music library to the device,
+and it even supported CarPlay. It _worked_, but only if you had an iPhone, and the database
+synchronization really didn't scale.
+
+Every sync was all or nothing. Tapping the sync button kicked off a cascade that pulled down every
+artist, then every album, then every song, then every playlist and every track in each one, and only
+saved once the whole thing finished. That's fine with a few hundred albums, but my library kept
+growing, and the bigger it got, the longer I spent staring at a spinner before I could play the new
+stuff.
+
+Every sync was manual too. Add an album on the server, and the app had no idea it existed until you
+went and told it to go look. Having to babysit my phone just so it knew what music I owned was
+exactly the kind of chore I wanted a music app to take off my plate, not add to it. Your library
+already lives on your server, so why should your phone have to keep a copy of it in sync?
+
+I also quickly realized that I wanted to cover Android users as well, so I started over in March
+2022 with [a React Native version](https://github.com/anultravioletaurora/Jellify-React-Native).
+That attempt lasted about two weeks and 13 commits before I set it down. I never got close to a
+working prototype, but it planted seeds that would sprout years later.
+
+I took a brief hiatus from self-hosting in 2023, but it didn't last long, and I came back to it
+stronger than before. At first I went back to [Plex](https://www.plex.tv) and
+[Plexamp](https://www.plex.tv/plexamp/). When I eventually made the switch to Jellyfin, I couldn't
+find a music app that worked the way I wanted it to, and so the journey to build one for myself
+began once again.
+
+The [current version](https://github.com/Jellify-Music/App) that exists today started on August
+9, 2024. It's React Native again, but this time it stuck. Five months later, on January 10, 2025, I
+tagged the very first release: version 0.0.1.
+
+What made the third time different was that I finally figured out the formula: stop syncing the
+database, and cache the API responses instead.
+
+The first piece was [TanStack Query](https://tanstack.com/query). Instead of mirroring the whole
+library up front, the app only asks Jellyfin for what you're actually looking at, whether that's an
+artist, an album, or a playlist, and holds onto the response. The next time you open it, the cached
+copy shows up instantly while a fresh one is fetched in the background. New albums just appear, with
+no sync button in sight.
+
+The second piece was [`react-native-mmkv`](https://github.com/mrousavy/react-native-mmkv), a blazing
+fast key-value store. Persisting TanStack Query's cache to MMKV means those responses survive the
+app closing, so launching Jellify drops you right back into your library instead of waiting on the
+network.
+
+Put the two together and I had a _eureka_ moment. All of the speed of keeping your library on
+device, with none of the syncing. Your phone only keeps what you've actually seen, and Jellyfin
+stays the source of truth.
+
+## Alive and Amplified
+
+I'm one developer who's partial to ~~JavaScript~~ _TypeScript_, up against a myriad of platforms,
+and [React Native](https://reactnative.dev) lets me write one app for all of them.
+
+TanStack Query handles the data fetching layer, but a music player has a lot more moving pieces than
+that. Some of them didn't exist in the shape I needed, so I ended up building them myself. Here's
+what's under the hood.
+
+### The Frontend
+
+The star of the show for the frontend is [Tamagui](https://tamagui.dev). I originally came for the
+premade components, but I've stayed for the token system, and for how well Tamagui plays with the
+rest of the React Native ecosystem, like
+[Reanimated](https://docs.swmansion.com/react-native-reanimated/). Everything from spacing to colors
+pulls from the same set of tokens, so the whole app stays consistent without me having to hardcode
+it.
+
+#### Sliderama: A Reanimated Slider for React Native
+
+For the player UI, I experimented with so many premade slider components before I decided to build
+my own. None of them felt quite right under my thumb, and the ones that came close dragged in more
+dependencies than I wanted.
+
+So now there's
+[`@jellify-music/react-native-reanimated-slider`](https://github.com/Jellify-Music/react-native-reanimated-slider),
+built on the Reanimated and
+[Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) modules most React
+Native apps already have. It handles both taps and drags, runs its animations fluidly, and can snap
+to fixed steps. In Jellify, it's the seek bar on the player screen, and it's the stepped, springy
+slider for the track lookahead setting. It's available via `npm` too, so any React Native app can
+use it.
+
+### The Backend
+
+Jellify talks to your server through the
+[Jellyfin TypeScript SDK](https://github.com/jellyfin/jellyfin-sdk-typescript), with TanStack Query
+caching every response and MMKV keeping that cache on disk. App state, like your settings and your
+play queue, lives in [Zustand](https://zustand.docs.pmnd.rs) stores that persist to MMKV as well, so
+everything comes back right where you left it.
+
+#### A New Kind of Player Module: Nitro Player
+
+Jellify originally started off with
+[`react-native-track-player`](https://github.com/doublesymmetry/react-native-track-player). It's
+what I had used back in 2022, and it became the starting point for the current iteration in 2024. We
+quickly outgrew it, however, when adding Android Auto and Google Cast support. We needed a player
+module that kept everything in sync, regardless of the output target.
+
+That module is
+[`react-native-nitro-player`](https://github.com/riteshshukla04/react-native-nitro-player), written
+by [Ritesh Shukla](https://github.com/riteshshukla04), who's also the second most active contributor
+to Jellify. It's built on [Nitro Modules](https://nitro.margelo.com), and it handles the queue,
+playback controls, Android Auto, and CarPlay. CarPlay support even landed in Jellify through
+[Ritesh's own pull request](https://github.com/Jellify-Music/App/pull/1624), and it's far better
+than the version I built in Swift all the way back in 2021.
+
+## Download Jellify for iOS and Android
+
+{/* App Store / Play Store / etc. — link to each store listing */}
+
+### Liner Notes: Jellify on GitHub
+
+{/* Source code on GitHub — link to the repo */}
+
+## Special Thanks
+
+### Jellyfinners
+
+The [Jellyfin](https://jellyfin.org) developers gave me so much help, answering all of my questions
+regardless of how naive they were. Huge thanks to
+[Niels van Velzen](https://github.com/nielsvanvelzen) and
+[Bill Thornton](https://github.com/thornbill), who undoubtedly helped me the most. They taught me
+the ways of Jellyfin's audio API and how to transcode audio with it, and their help is what made
+Jellify a reality.
+
+The [Finamp](https://github.com/jmshrv/finamp) gang also lent a hand.
+[James Harvey](https://github.com/jmshrv)'s
+[blog post on the Jellyfin API](https://jmshrv.com/posts/jellyfin-api/) was exceptionally valuable
+during development, and [Chaphasilor](https://github.com/Chaphasilor) taught me everything they know
+about audio normalization and LUFS. Their math is the basis for Jellify's own audio normalization.
+
+### Fellow Builders
+
+Marc and the rest of the [Margelo community](https://discord.com/invite/6CSHz2qAvA) make the Nitro
+modules Jellify leans on so heavily, and they've been just as generous with their support.
+[Nicolas Charpentier](https://github.com/charpeni) wrote the
+[URL polyfill](https://github.com/charpeni/react-native-url-polyfill) Jellify uses, and helped me
+get Jest working. And the team behind [Podverse](https://github.com/podverse/podverse-rn) built an
+incredible open source app that I referenced extensively while building this one.
+
+### Open Source Contributors
+
+Jellify started as a one-person band, but it hasn't been for a long time.
+[So many people](https://github.com/Jellify-Music/App/graphs/contributors) have poured their blood,
+sweat, and tears into the app, and we've recently added translations into other languages through
+Weblate.
+
+### The Community
+
+Some of the friends I've made along the way have been critical in fostering the community around
+Jellify: [Thalia](https://github.com/thaliadavar), [BotBlake](https://github.com/BotBlake), and
+[Neptune1987](https://github.com/NeptuneHub). Thank you for making it a place people want to be.
+
+### The Day Ones
+
+To my longtime friends who have heard me talk about Jellify for literally _eons_: Tony, Trevor,
+[Laine](https://github.com/lainie-ftw), and [Jordan](https://github.com/jordanbleu). Thank you for
+testing Jellify in its infancy, and for supporting me all the way back at the beginning.
+
+And to my best(est) friend [Alyssa](https://www.instagram.com/uhh.lyssarae), for your design
+knowledge and all the artwork you've made for Jellify. You've been instrumental in shaping its user
+experience, my rock during development, and an inspiration in my life.
+
+## One More Thing: What's Next for Jellify
+
+{/* What's next for year two */}
