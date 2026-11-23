@@ -7,28 +7,34 @@ import Layout from '../../layouts/Layout.astro'
 const posts = await getPosts()
 ---
 
-<Layout title={`Blog - ${SITE_NAME}`} description='Musings from a mad technologist.'>
+<Layout
+	title={`Blog - ${SITE_NAME}`}
+	description='Musings from a mad technologist.'
+>
 	<main>
 		<div class='content'>
 			<h1>Blog</h1>
 			<div class='meta'>
 				<p>Stuff and things about technology, from my brain to yours.</p>
-				<a class='rss' href={rssLink.href}><Icon path={rssLink.icon} />RSS</a>
+				<a class='rss' href={rssLink.href}>
+					<Icon path={rssLink.icon} />
+					RSS
+				</a>
 			</div>
 
 			<ol>
-				{
-					posts.map((post) => (
-						<li>
-							<a class='post' href={`/blog/${post.id}`}>
-								<time datetime={post.data.date.toISOString()}>{formatPostDate(post.data.date)}</time>
-								<h2>{post.data.title}</h2>
-								<p>{getPostSnippet(post)}</p>
-								<span class='more'>Read more →</span>
-							</a>
-						</li>
-					))
-				}
+				{posts.map((post) => (
+					<li>
+						<a class='post' href={`/blog/${post.id}`}>
+							<time datetime={post.data.date.toISOString()}>
+								{formatPostDate(post.data.date)}
+							</time>
+							<h2>{post.data.title}</h2>
+							<p>{getPostSnippet(post)}</p>
+							<span class='more'>Read more →</span>
+						</a>
+					</li>
+				))}
 			</ol>
 		</div>
 	</main>

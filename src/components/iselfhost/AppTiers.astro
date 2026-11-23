@@ -1,0 +1,194 @@
+---
+// Jobs on the rack, stacked by how critical they are. Tier 1 sits at the bottom since everything leans on it
+interface App {
+	name: string
+	url: string
+	note?: string
+}
+
+const tiers: { level: number; name: string; apps: App[] }[] = [
+	{
+		level: 3,
+		name: 'Secondary Applications',
+		apps: [
+			{ name: 'RomM', url: 'https://github.com/rommapp/romm' },
+			{ name: 'Guacamole', url: 'https://guacamole.apache.org' },
+			{
+				name: 'Seerr',
+				url: 'https://github.com/seerr-team/seerr',
+				note: 'Media requests',
+			},
+			{
+				name: 'GitHub Actions runners',
+				url: 'https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners',
+				note: 'For Jellify, more on those below',
+			},
+		],
+	},
+	{
+		level: 2,
+		name: 'Mission Critical Applications',
+		apps: [
+			{
+				name: 'Nextcloud',
+				url: 'https://nextcloud.com',
+				note: 'Nomad service, plus batch jobs for cron, previews, NFS scans, and Backblaze backups',
+			},
+			{
+				name: 'Jellyfin',
+				url: 'https://jellyfin.org',
+				note: 'Native .app, VideoToolbox transcoding. Dispatcharr tunes Live TV',
+			},
+			{
+				name: 'AudioMuse-AI',
+				url: 'https://github.com/NeptuneHub/AudioMuse-AI',
+				note: 'Native .app, sonic analysis on CoreML',
+			},
+			{ name: 'Ollama + Open WebUI', url: 'https://ollama.com' },
+			{
+				name: 'Penpot',
+				url: 'https://penpot.app',
+				note: 'Apple container on the Jellify datacenter, SSO gated to GitHub teams',
+			},
+		],
+	},
+	{
+		level: 1,
+		name: 'Core Infrastructure',
+		apps: [
+			{
+				name: 'Postgres',
+				url: 'https://www.postgresql.org',
+				note: 'Patroni with Consul as its DCS, pg_dumpall every 6 hours',
+			},
+			{ name: 'Redis + Sentinel', url: 'https://redis.io' },
+			{
+				name: 'SeaweedFS',
+				url: 'https://github.com/seaweedfs/seaweedfs',
+				note: '3 masters, 3 volume servers, a filer, NFS backup',
+			},
+			{ name: 'Traefik + Fail2ban', url: 'https://traefik.io' },
+			{ name: 'OpenLDAP + Keycloak', url: 'https://www.keycloak.org' },
+			{
+				name: 'Semaphore',
+				url: 'https://semaphoreui.com',
+				note: 'Runs the Ansible and Terraform that deploy everything, itself included',
+			},
+		],
+	},
+]
+---
+
+<figure class='tiers'>
+	{tiers.map((tier) => (
+		<section class:list={['tier', `tier-${tier.level}`]}>
+			<p class='heading'>
+				<span class='level'>Tier {tier.level}</span>
+				<span class='name'>{tier.name}</span>
+			</p>
+			<ul class='apps'>
+				{tier.apps.map((app) => (
+					<li>
+						<a href={app.url}>{app.name}</a>
+						{app.note && <span class='note'>{app.note}</span>}
+					</li>
+				))}
+			</ul>
+		</section>
+	))}
+	<figcaption>
+		Stacked by criticality. Everything above leans on Tier 1, so that's what
+		gets the most tender loving care.
+	</figcaption>
+</figure>
+
+<style>
+	.tiers {
+		container-type: inline-size;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.tier {
+		padding: 0.75rem;
+		border-radius: 14px;
+		border: 1px solid var(--border-color);
+		background-color: var(--background-25);
+	}
+
+	.tier-3 {
+		border-style: dashed;
+	}
+
+	.tier-1 {
+		background:
+			linear-gradient(var(--background), var(--background)) padding-box,
+			var(--gradient) border-box;
+		border: 2px solid transparent;
+	}
+
+	.heading {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.5rem;
+		margin: 0 0 0.625rem;
+	}
+
+	.level {
+		font-weight: 700;
+	}
+
+	.name {
+		font-size: 0.875rem;
+		font-style: italic;
+		color: var(--accent);
+	}
+
+	.apps {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0.375rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	@container (min-width: 28rem) {
+		.apps {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@container (min-width: 40rem) {
+		.apps {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.apps li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		margin: 0;
+		padding: 0.375rem 0.5rem;
+		border-radius: 5px;
+		border: 1px solid var(--primary);
+		background-color: var(--background-50);
+	}
+
+	.tier-3 .apps li {
+		border-color: var(--border-color);
+	}
+
+	.apps a {
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.note {
+		font-size: 0.75rem;
+		color: var(--neutral);
+	}
+</style>

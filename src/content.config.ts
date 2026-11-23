@@ -4,7 +4,7 @@ import { z } from 'astro/zod'
 
 /**
  * The blog collection defines the structure and metadata for blog posts.
- * 
+ *
  * Each blog post must have a title and a date, and can optionally have a description and an updated date.
  *
  * A post's file name is its URL: `2026-11-09-hello-world.mdx` is served at /blog/2026-11-09-hello-world.

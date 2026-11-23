@@ -23,27 +23,37 @@ export async function getStaticPaths() {
 	return posts.map((post) => ({ params: { id: post.id }, props: { post } }))
 }
 
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const escape = (text: string) =>
+	text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
 
 // SVG text doesn't wrap, so break the title into lines by word, with an ellipsis if it runs past MAX_LINES
 function wrap(text: string): string[] {
 	const lines: string[] = []
 	for (const word of text.split(/\s+/)) {
 		const last = lines.at(-1)
-		if (last !== undefined && `${last} ${word}`.length <= MAX_LINE_LENGTH) lines[lines.length - 1] = `${last} ${word}`
+		if (last !== undefined && `${last} ${word}`.length <= MAX_LINE_LENGTH)
+			lines[lines.length - 1] = `${last} ${word}`
 		else lines.push(word)
 	}
 	if (lines.length <= MAX_LINES) return lines
 	return [...lines.slice(0, MAX_LINES - 1), `${lines[MAX_LINES - 1]}…`]
 }
 
-const circleMask = (size: number) => Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" /></svg>`)
+const circleMask = (size: number) =>
+	Buffer.from(
+		`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" /></svg>`,
+	)
 
 export async function GET({ props }: APIContext) {
 	const { post } = props as { post: Post }
 	const lines = wrap(post.data.title)
 	// Center the title block vertically between the header and the footer
-	const titleTop = HEIGHT / 2 - ((lines.length - 1) * TITLE_LINE_HEIGHT) / 2 + TITLE_SIZE / 3
+	const titleTop =
+		HEIGHT / 2 - ((lines.length - 1) * TITLE_LINE_HEIGHT) / 2 + TITLE_SIZE / 3
 
 	const card = Buffer.from(`
 <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -86,5 +96,7 @@ export async function GET({ props }: APIContext) {
 		.png({ compressionLevel: 9 })
 		.toBuffer()
 
-	return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } })
+	return new Response(new Uint8Array(png), {
+		headers: { 'Content-Type': 'image/png' },
+	})
 }

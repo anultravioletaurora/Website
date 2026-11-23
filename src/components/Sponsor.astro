@@ -1,0 +1,85 @@
+---
+import { mdiHeart } from '@mdi/js'
+import Icon from '@/components/Icon.astro'
+import { sponsorLinks } from '@/config'
+
+interface Props {
+	heading?: string
+}
+
+const { heading = 'Like what you see?' } = Astro.props
+---
+
+<aside class='sponsor' aria-label='Sponsor'>
+	<Icon path={mdiHeart} />
+	<p class='heading'>{heading}</p>
+	<p class='message'>
+		<slot>
+			If you'd like to support my work, you can sponsor me on GitHub or Patreon.
+		</slot>
+	</p>
+	<div class='links'>
+		{sponsorLinks.map((link) => (
+			<a href={link.href}>
+				<Icon path={link.icon} />
+				{link.label}
+			</a>
+		))}
+	</div>
+</aside>
+
+<style>
+	.sponsor {
+		margin: 3rem 0 0;
+		padding: 2rem 1.5rem;
+		border-radius: 14px;
+		text-align: center;
+		background:
+			linear-gradient(var(--background), var(--background)) padding-box,
+			var(--gradient) border-box;
+		border: 2px solid transparent;
+	}
+
+	.sponsor > :global(.icon) {
+		width: 2.5rem;
+		height: 2.5rem;
+		color: var(--accent);
+	}
+
+	.heading {
+		margin: 0.5rem 0 0;
+		font-size: 1.25rem;
+		font-weight: 700;
+	}
+
+	.message {
+		margin: 0.5rem auto 0;
+		max-width: 28rem;
+		color: var(--neutral);
+	}
+
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
+		margin-top: 1.5rem;
+	}
+
+	.links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border-radius: 7px;
+		background-color: var(--primary);
+		color: var(--background);
+		font-weight: 700;
+		text-decoration: none;
+	}
+
+	.links a:hover,
+	.links a:focus-visible {
+		box-shadow: 0 8px 24px -8px var(--primary);
+	}
+</style>

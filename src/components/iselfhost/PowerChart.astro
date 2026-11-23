@@ -1,0 +1,291 @@
+---
+// Approximate wall power (from UPS readings) for the old Harvester cluster vs. the Mac rack.
+// Bars are solid to the low end of each range and fade out to the high end.
+const max = 450
+const ticks = [0, 100, 200, 300, 400]
+const oldIdle = 250
+
+const groups = [
+	{
+		state: 'Idle',
+		rows: [
+			{
+				name: 'Harvester x64',
+				nodes: 3,
+				low: 230,
+				high: 270,
+				label: 'mid 200s',
+			},
+			{
+				name: 'Mac Minis',
+				nodes: 6,
+				low: 130,
+				high: 170,
+				label: 'mid 100s',
+				mac: true,
+			},
+		],
+	},
+	{
+		state: 'Under load',
+		rows: [
+			{ name: 'Harvester x64', nodes: 3, low: 375, high: 425, label: '~400' },
+			{
+				name: 'Mac Minis',
+				nodes: 6,
+				low: 230,
+				high: 270,
+				label: 'mid 200s',
+				mac: true,
+			},
+		],
+	},
+]
+
+const pct = (watts: number) => `${(watts / max) * 100}%`
+---
+
+<figure class='power'>
+	<div class='chart' style={`--old-idle: ${oldIdle / max}`}>
+		{groups.map((group) => (
+			<div class='group'>
+				<p class='state'>{group.state}</p>
+				{group.rows.map((row) => (
+					<div class:list={['row', { mac: row.mac }]}>
+						<span class='name'>
+							{row.name}
+							<span class='nodes'>{row.nodes} nodes</span>
+						</span>
+						<span class='track'>
+							<span
+								class='bar'
+								tabindex='0'
+								aria-label={`${row.name}, ${group.state.toLowerCase()}: roughly ${row.low} to ${row.high} watts`}
+								style={`--high: ${pct(row.high)}; --solid: ${(row.low / row.high) * 100}%`}
+							>
+								<span class='tip' aria-hidden='true'>
+									{row.name}, {group.state.toLowerCase()}: ~{row.low}–{row.high}{' '}
+									W
+								</span>
+							</span>
+						</span>
+						<span class='value'>{row.label} W</span>
+					</div>
+				))}
+			</div>
+		))}
+		<div class='axis' aria-hidden='true'>
+			<span class='track'>
+				{ticks.map((tick) => (
+					<span style={`left: ${pct(tick)}`}>{tick}</span>
+				))}
+			</span>
+		</div>
+		<span class='marker' aria-hidden='true'>
+			Harvester idle
+		</span>
+	</div>
+	<figcaption>
+		Watts at the wall, approximate, from what the UPS showed. Twice the nodes,
+		and under load the Macs land about where Harvester used to idle.
+	</figcaption>
+</figure>
+
+<style>
+	.power {
+		container-type: inline-size;
+	}
+
+	.chart {
+		--name-width: 6.5rem;
+		--value-width: 4.75rem;
+		--gap: 0.75rem;
+		position: relative;
+		padding: 1rem;
+		border-radius: 14px;
+		border: 1px solid var(--border-color);
+		background-color: var(--background-25);
+	}
+
+	.group + .group {
+		margin-top: 1rem;
+	}
+
+	.state {
+		margin: 0 0 0.375rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--neutral);
+	}
+
+	.row,
+	.axis {
+		display: grid;
+		grid-template-columns: var(--name-width) 1fr var(--value-width);
+		gap: var(--gap);
+		align-items: center;
+	}
+
+	.row + .row {
+		margin-top: 0.375rem;
+	}
+
+	.name {
+		display: flex;
+		flex-direction: column;
+		font-size: 0.875rem;
+		font-weight: 600;
+		line-height: 1.2;
+	}
+
+	.nodes {
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--neutral);
+	}
+
+	.track {
+		position: relative;
+		height: 1.25rem;
+		background-image: linear-gradient(var(--border-color), var(--border-color));
+		background-size: 1px 100%;
+		background-repeat: no-repeat;
+	}
+
+	.bar {
+		--color: var(--neutral);
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: var(--high);
+		border-radius: 0 4px 4px 0;
+		/* Solid to the low estimate, fading to the high one */
+		background: linear-gradient(
+			to right,
+			var(--color) var(--solid),
+			transparent
+		);
+		cursor: default;
+	}
+
+	.mac .bar {
+		--color: var(--primary);
+	}
+
+	.bar:focus-visible {
+		outline-offset: 2px;
+	}
+
+	.tip {
+		position: absolute;
+		bottom: calc(100% + 0.375rem);
+		left: 0;
+		z-index: 1;
+		padding: 0.25rem 0.5rem;
+		border-radius: 5px;
+		border: 1px solid var(--border-color);
+		background-color: var(--background);
+		font-size: 0.75rem;
+		white-space: nowrap;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.1s;
+	}
+
+	.bar:hover .tip,
+	.bar:focus-visible .tip {
+		opacity: 1;
+	}
+
+	.value {
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--neutral);
+	}
+
+	.mac .value {
+		font-weight: 700;
+		color: var(--color);
+	}
+
+	.axis {
+		margin-top: 0.5rem;
+	}
+
+	.axis .track {
+		grid-column: 2;
+		height: 1rem;
+		background: none;
+	}
+
+	.axis .track span {
+		position: absolute;
+		transform: translateX(-50%);
+		font-size: 0.6875rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--neutral);
+	}
+
+	/* Dotted reference line at the old cluster's idle draw, across both groups */
+	.marker {
+		position: absolute;
+		top: 0.5rem;
+		bottom: 2.25rem;
+		left: calc(
+			1rem + var(--name-width) + var(--gap) +
+				(
+					100% - 2rem - var(--name-width) - var(--value-width) - var(--gap) * 2
+				) *
+				var(--old-idle)
+		);
+		border-left: 2px dotted var(--accent);
+		padding-left: 0.25rem;
+		font-size: 0.6875rem;
+		font-weight: 600;
+		color: var(--accent);
+		pointer-events: none;
+	}
+
+	/* Too narrow for three columns: name and value on one line, bar full width below */
+	@container (max-width: 30rem) {
+		.chart {
+			--name-width: 0px;
+			--value-width: 0px;
+			--gap: 0px;
+		}
+
+		.row {
+			grid-template-areas: 'name value' 'track track';
+			grid-template-columns: 1fr auto;
+			row-gap: 0.25rem;
+		}
+
+		.row + .row {
+			margin-top: 0.625rem;
+		}
+
+		.name {
+			grid-area: name;
+			flex-direction: row;
+			align-items: baseline;
+			gap: 0.375rem;
+		}
+
+		.row .track {
+			grid-area: track;
+		}
+
+		.value {
+			grid-area: value;
+		}
+
+		.axis {
+			grid-template-columns: 1fr;
+		}
+
+		.axis .track {
+			grid-column: 1;
+		}
+	}
+</style>
